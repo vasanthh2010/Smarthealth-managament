@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hospital Registration - Smart Hospital System</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .auth-container { padding: 3rem 1rem; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+    .auth-form { max-width: 800px; width: 100%; margin: 0 auto; }
+    .auth-header { text-align: center; margin-bottom: 2rem; }
+    .auth-header i { font-size: 3rem; color: var(--success); margin-bottom: 1rem; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .section-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-light);
+      text-transform: uppercase;
+      margin: 1.5rem 0 1rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+
+    @media (max-width: 600px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-light">
+
+  <div class="auth-container">
+    <div class="card auth-form">
+      <div class="auth-header">
+        <div
+          style="display:inline-flex; width:64px; height:64px; background:var(--success-bg); color:var(--success); border-radius:16px; align-items:center; justify-content:center; font-size:2rem; margin-bottom:1rem;">
+          <i class="fa-solid fa-file-medical"></i>
+        </div>
+        <h2>Register Your Hospital</h2>
+        <p class="text-muted">Join our network to manage beds and tokens efficiently.</p>
+      </div>
+
+      <form id="hospitalRegForm" onsubmit="handleRegistration(event)">
+        <div class="section-title">Hospital Information</div>
+        <div class="form-group">
+          <label>Hospital Name *</label>
+          <div class="input-with-icon">
+            <i class="fa-solid fa-hospital"></i>
+            <input type="text" class="form-control" id="name" required placeholder="e.g. City General Hospital">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>About Hospital (Description)</label>
+          <textarea class="form-control" id="description" rows="3"
+            placeholder="Briefly describe your hospital's specialties..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Hospital Photo (Optional)</label>
+          <input type="file" class="form-control" id="hospital_image" accept="image/*" style="padding: 0.5rem;">
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Established Year *</label>
+            <div class="input-with-icon"><i class="fa-solid fa-calendar"></i><input type="number" class="form-control"
+                id="est_year" required placeholder="YYYY" min="1800" max="2026"></div>
+          </div>
+          <div class="form-group">
+            <label>Total Beds Capacity *</label>
+            <div class="input-with-icon"><i class="fa-solid fa-bed"></i><input type="number" class="form-control"
+                id="total_beds" required placeholder="e.g. 50" min="1"></div>
+          </div>
+        </div>
+
+        <div class="section-title">Location & Address</div>
+        <div class="form-group">
+          <label>Full Address *</label>
+          <div class="input-with-icon"><i class="fa-solid fa-map-pin"></i><input type="text" class="form-control"
+              id="address" required placeholder="Street Address"></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group"><label>City *</label><input type="text" class="form-control" id="city" required></div>
+          <div class="form-group"><label>State *</label><input type="text" class="form-control" id="state" required>
+          </div>
+          <div class="form-group" style="grid-column: 1 / -1;"><label>Pincode / Zip *</label><input type="text"
+              class="form-control" id="pincode" required></div>
+        </div>
+
+        <div class="section-title">Contact & Admin Details</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Admin Name *</label>
+            <div class="input-with-icon"><i class="fa-solid fa-user"></i><input type="text" class="form-control"
+                id="contact_person" required placeholder="Your full name"></div>
+          </div>
+          <div class="form-group">
+            <label>Designation</label>
+            <div class="input-with-icon"><i class="fa-solid fa-id-badge"></i><input type="text" class="form-control"
+                id="contact_designation" placeholder="e.g. Chief Medical Officer"></div>
+          </div>
+          <div class="form-group">
+            <label>Hospital Email *</label>
+            <div class="input-with-icon"><i class="fa-solid fa-envelope"></i><input type="email" class="form-control"
+                id="email" required placeholder="admin@hospital.com"></div>
+          </div>
+          <div class="form-group">
+            <label>Hospital Phone *</label>
+            <div class="input-with-icon"><i class="fa-solid fa-phone"></i><input type="tel" class="form-control"
+                id="phone" required placeholder="Contact Number"></div>
+          </div>
+        </div>
+
+        <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+          Doctors Information
+          <button type="button" class="btn btn-sm btn-ghost" onclick="addDoctorRow()"><i class="fa-solid fa-plus"></i>
+            Add Doctor</button>
+        </div>
+        <div id="doctorsContainer">
+          <!-- Dynamic doctor rows will be added here -->
+        </div>
+
+        <div class="alert alert-info mt-3 mb-3">
+          <i class="fa-solid fa-circle-info"></i> After successful submission, the <b>Super Admin</b> will verify your
+          details and provide you with a unique Login ID and Password.
+        </div>
+
+        <button type="submit" class="btn btn-success w-full" id="submitBtn"
+          style="padding: 1rem; font-size:1.1rem; border-radius:12px;">
+          <i class="fa-solid fa-paper-plane"></i> Submit Registration Application
+        </button>
+
+        <div class="text-center mt-3">
+          <a href="login.html" class="text-muted">Already have a hospital Login ID? Sign in here</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="../js/api.js"></script>
+  <script>
+    function addDoctorRow() {
+      const container = document.getElementById('doctorsContainer');
+      const div = document.createElement('div');
+      div.className = 'doctor-row card mb-2';
+      div.style.padding = '1rem';
+      div.style.border = '1px solid var(--border-color)';
+      div.innerHTML = `
+    <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+      <h5 style="margin:0;">Doctor</h5>
+      <button type="button" class="btn btn-sm" style="background:#fee2e2;color:#ef4444;" onclick="this.parentElement.parentElement.remove()">✕ Remove</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label>Name *</label><input type="text" class="form-control doc-name" required placeholder="Dr. XYZ"></div>
+      <div class="form-group"><label>Type/Specialization *</label><input type="text" class="form-control doc-spec" required placeholder="e.g. Cardiologist"></div>
+      <div class="form-group"><label>Experience (Years)</label><input type="number" class="form-control doc-exp" placeholder="e.g. 10"></div>
+      <div class="form-group"><label>Consultation Fee (₹)</label><input type="number" class="form-control doc-fee" placeholder="e.g. 500"></div>
+    </div>
+  `;
+      container.appendChild(div);
+    }
+
+    // Add one doctor row by default
+    addDoctorRow();
+
+    async function handleRegistration(e) {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+
+      const data = {
+        name: document.getElementById('name').value,
+        description: document.getElementById('description').value,
+        established_year: document.getElementById('est_year').value,
+        total_beds: document.getElementById('total_beds').value,
+        address: document.getElementById('address').value,
+        city: document.getElementById('city').value,
+        state: document.getElementById('state').value,
+        pincode: document.getElementById('pincode').value,
+        contact_person: document.getElementById('contact_person').value,
+        contact_designation: document.getElementById('contact_designation').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        doctors_info: Array.from(document.querySelectorAll('.doctor-row')).map(row => ({
+          name: row.querySelector('.doc-name').value,
+          specialization: row.querySelector('.doc-spec').value,
+          experience_years: parseInt(row.querySelector('.doc-exp').value) || 0,
+          consultation_fee: parseFloat(row.querySelector('.doc-fee').value) || 0
+        }))
+      };
+
+      try {
+        const res = await apiFetch('/api/auth/hospital/register', {
+          method: 'POST',
+          body: JSON.stringify(data)
+        });
+
+        document.getElementById('hospitalRegForm').innerHTML = `
+      <div class="text-center" style="padding: 3rem 1rem;">
+        <div style="font-size: 5rem; color: var(--success); margin-bottom: 1rem;"><i class="fa-solid fa-circle-check"></i></div>
+        <h3>Application Received Successfully!</h3>
+        <p class="text-muted mt-2 mb-3">Thank you for registering. The Super Admin will review your application shortly. Once approved, you will be assigned a secure Login ID and Password to manage your hospital's appointments and beds.</p>
+        <a href="login.html" class="btn btn-ghost mt-2">← Back to Login</a>
+        <a href="../index.html" class="btn btn-primary mt-2">Go to Home</a>
+      </div>
+    `;
+        window.scrollTo(0, 0);
+      } catch (err) {
+        showToast(err.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Registration Application';
+      }
+    }
+  </script>
+</body>
+
+</html>

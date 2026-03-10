@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Super Admin Dashboard - Smart Hospital</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  .sidebar { background: #111827; }
+  .recent-list { list-style: none; }
+  .recent-item { display: flex; justify-content: space-between; align-items: center; padding: .75rem 0; border-bottom: 1px solid var(--border); font-size: .88rem; }
+  .recent-item:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="brand"><i class="fa-solid fa-shield-halved"></i> <span>Super</span> Admin</div>
+      <div style="font-size:.72rem;color:rgba(255,255,255,.4);margin-top:.25rem;" id="adminName">Loading…</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">System</div>
+      <a href="dashboard.html" class="nav-item active"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+      <a href="hospitals.html" class="nav-item"><i class="fa-solid fa-hospital"></i> Hospitals</a>
+      <a href="patients.html" class="nav-item"><i class="fa-solid fa-users"></i> Patients</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn btn-ghost btn-sm w-full" onclick="logout()" style="color:rgba(255,255,255,.6);justify-content:flex-start;"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h3>System Overview</h3>
+        <div class="text-muted text-small" id="dateLabel"></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="loadAll()"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+    </div>
+
+    <div class="page-content">
+      <!-- Main Stats -->
+      <div class="stats-grid mb-3" id="mainStats">
+        <div class="stat-card"><div class="skeleton skeleton-line" style="width:70%;margin-bottom:.5rem;"></div><div class="skeleton" style="height:40px;width:50%;"></div></div>
+        <div class="stat-card"><div class="skeleton skeleton-line" style="width:70%;margin-bottom:.5rem;"></div><div class="skeleton" style="height:40px;width:50%;"></div></div>
+        <div class="stat-card"><div class="skeleton skeleton-line" style="width:70%;margin-bottom:.5rem;"></div><div class="skeleton" style="height:40px;width:50%;"></div></div>
+        <div class="stat-card"><div class="skeleton skeleton-line" style="width:70%;margin-bottom:.5rem;"></div><div class="skeleton" style="height:40px;width:50%;"></div></div>
+        <div class="stat-card"><div class="skeleton skeleton-line" style="width:70%;margin-bottom:.5rem;"></div><div class="skeleton" style="height:40px;width:50%;"></div></div>
+        <div class="stat-card"><div class="skeleton skeleton-line" style="width:70%;margin-bottom:.5rem;"></div><div class="skeleton" style="height:40px;width:50%;"></div></div>
+      </div>
+
+      <div class="two-col">
+        <!-- Pending Approvals -->
+        <div>
+          <div class="d-flex justify-between align-center mb-2">
+            <h4><i class="fa-solid fa-clock"></i> Pending Approvals</h4>
+            <a href="hospitals.html" class="btn btn-ghost btn-sm">View All</a>
+          </div>
+          <div class="card" id="pendingCard">
+            <div class="text-center" style="padding:2rem;"><div class="spinner"></div></div>
+          </div>
+        </div>
+        <!-- Quick Stats -->
+        <div>
+          <h4 class="mb-2"><i class="fa-solid fa-chart-bar"></i> Today's Activity</h4>
+          <div class="card" id="activityCard">
+            <div class="card-body">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+                <div>
+                  <div class="text-muted text-small fw-600" style="text-transform:uppercase;letter-spacing:.05em;">Today's Tokens</div>
+                  <div class="fw-800" style="font-size:2rem;" id="todayTokens">-</div>
+                </div>
+                <div style="font-size:2.5rem;">🎫</div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+                <div>
+                  <div class="text-muted text-small fw-600" style="text-transform:uppercase;letter-spacing:.05em;">Ambulance Calls</div>
+                  <div class="fw-800" style="font-size:2rem;" id="todayAmb">-</div>
+                </div>
+                <div style="font-size:2.5rem;">🚑</div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div class="text-muted text-small fw-600" style="text-transform:uppercase;letter-spacing:.05em;">Beds Available</div>
+                  <div class="fw-800" style="font-size:2rem;color:var(--success);" id="availBeds">-</div>
+                </div>
+                <div style="font-size:2.5rem;">🛏️</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script>
+if (!Auth.requireRole('super_admin')) {}
+document.getElementById('adminName').textContent = Auth.getUser()?.name || '';
+document.getElementById('dateLabel').textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+async function loadStats() {
+  try {
+    const s = await apiFetch('/api/admin/stats');
+    document.getElementById('mainStats').innerHTML = `
+      <div class="stat-card"><div class="stat-icon">🏥</div><div class="stat-label">Active Hospitals</div><div class="stat-value text-primary">${s.total_hospitals}</div>${s.pending_hospitals > 0 ? `<div class="stat-sub text-warning">${s.pending_hospitals} pending</div>` : ''}</div>
+      <div class="stat-card"><div class="stat-icon">🧑‍⚕️</div><div class="stat-label">Total Patients</div><div class="stat-value">${s.total_patients}</div></div>
+      <div class="stat-card"><div class="stat-icon">👨‍⚕️</div><div class="stat-label">Doctors</div><div class="stat-value">${s.total_doctors}</div></div>
+      <div class="stat-card"><div class="stat-icon">🛏️</div><div class="stat-label">Available Beds</div><div class="stat-value text-success">${s.available_beds}</div><div class="stat-sub">${s.occupied_beds} occupied</div></div>
+      <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-label">Pending Requests</div><div class="stat-value text-warning">${s.pending_registrations}</div><div class="stat-sub">registrations</div></div>
+      <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-label">Today's Tokens</div><div class="stat-value">${s.today_tokens}</div></div>
+    `;
+    document.getElementById('todayTokens').textContent = s.today_tokens;
+    document.getElementById('todayAmb').textContent = s.today_ambulance;
+    document.getElementById('availBeds').textContent = s.available_beds;
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function loadPending() {
+  try {
+    const regs = await apiFetch('/api/admin/registrations');
+    const pending = regs.filter(r => r.status === 'pending');
+    if (!pending.length) {
+      document.getElementById('pendingCard').innerHTML = '<div class="card-body text-center text-muted">No pending approvals 🎉</div>';
+      return;
+    }
+    document.getElementById('pendingCard').innerHTML = `
+      <ul class="recent-list" style="padding:.5rem 1rem;">
+        ${pending.slice(0,5).map(r => `
+          <li class="recent-item">
+            <div>
+              <div class="fw-600">${r.name}</div>
+              <div class="text-muted text-small">${r.city}, ${r.state}</div>
+            </div>
+            <a href="hospitals.html" class="btn btn-primary btn-sm">Review</a>
+          </li>`).join('')}
+      </ul>
+      ${pending.length > 5 ? `<div class="card-footer text-center"><a href="hospitals.html" class="text-primary text-small fw-600">View all ${pending.length} →</a></div>` : ''}`;
+  } catch(e) {}
+}
+
+function loadAll() { loadStats(); loadPending(); }
+function logout() { Auth.clearSession(); window.location.href = '../index.html'; }
+loadAll();
+</script>
+</body>
+</html>

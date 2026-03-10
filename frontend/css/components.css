@@ -1,0 +1,51 @@
+/* Components CSS - Cards, badges, buttons */
+.btn-primary {
+  background-color: var(--primary-color);
+  color: var(--white);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-primary:hover {
+  background-color: #1D4ED8;
+}
+
+.btn-emergency {
+  background-color: var(--emergency-color);
+  color: var(--white);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.btn-emergency:hover {
+  background-color: #B91C1C;
+}
+
+.card {
+  background-color: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.badge-success {
+  background-color: #DCFCE7;
+  color: var(--success-color);
+}
+.badge-danger {
+  background-color: #FEE2E2;
+  color: var(--emergency-color);
+}

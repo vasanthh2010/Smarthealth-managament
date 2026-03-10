@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book Token - Smart Hospital</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  .page { max-width: 520px; margin: 0 auto; padding: 2rem 1.25rem; }
+  .back-btn { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-muted); font-size: 0.87rem; margin-bottom: 1.5rem; cursor: pointer; }
+  .doctor-info-box { background: linear-gradient(135deg, var(--primary-bg), #DBEAFE); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: center; border: 1px solid rgba(37,99,235,0.15); }
+  .doc-ava { width: 56px; height: 56px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+  /* Success Overlay */
+  #successOverlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.97); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; }
+  #successOverlay.show { display: flex; animation: fadeIn 0.4s ease; }
+  .success-icon { width: 96px; height: 96px; border-radius: 50%; background: var(--success-bg); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; }
+  .success-icon svg { width: 56px; height: 56px; }
+  .success-icon svg circle { fill: none; stroke: var(--success); stroke-width: 3; }
+  .success-icon svg path { fill: none; stroke: var(--success); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 100; stroke-dashoffset: 100; animation: checkmark 0.7s 0.3s ease forwards; }
+  .token-big { font-size: 5rem; font-weight: 800; color: var(--primary); line-height: 1; margin: 0.5rem 0; }
+</style>
+</head>
+<body>
+<div class="page fade-in">
+  <div class="back-btn" onclick="history.back()"><i class="fa-solid fa-arrow-left"></i> Back</div>
+  <h2 class="mb-1"><i class="fa-solid fa-ticket"></i> Book Your Token</h2>
+  <p class="text-muted mb-3">Confirm your booking for the selected doctor</p>
+
+  <div class="doctor-info-box" id="doctorBox">
+    <div class="doc-ava"><i class="fa-solid fa-user-doctor"></i></div>
+    <div>
+      <div class="fw-700" id="doctorName">Loading…</div>
+      <div class="text-muted text-small" id="doctorFee"></div>
+      <div id="doctorQueue" class="mt-1"></div>
+    </div>
+  </div>
+
+  <div id="msg-area"></div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="form-group">
+        <label class="form-label">Reason for Visit (Optional)</label>
+        <textarea class="form-control" id="reason" rows="3" placeholder="Briefly describe your symptoms or reason for visit…" style="resize:vertical;"></textarea>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Booking Summary -->
+      <div style="background:var(--bg);border-radius:var(--radius);padding:1rem;">
+        <div class="fw-600 mb-2 text-small" style="text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);">Booking Summary</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;">
+          <span class="text-muted text-small">Date</span>
+          <span class="fw-600 text-small" id="bookDate"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;">
+          <span class="text-muted text-small">Estimated Wait</span>
+          <span class="fw-600 text-small" id="estWait">-</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span class="text-muted text-small">Consultation Fee</span>
+          <span class="fw-600 text-small text-primary" id="fee">-</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-full btn-lg mt-3" id="bookBtn">
+        <i class="fa-solid fa-check"></i> Confirm & Book Token
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Success Overlay -->
+<div id="successOverlay">
+  <div class="success-icon">
+    <svg viewBox="0 0 52 52">
+      <circle cx="26" cy="26" r="23"/>
+      <path d="M14 26 l8 8 l16 -16"/>
+    </svg>
+  </div>
+  <h2 class="mb-1" style="color:var(--success)">Token Booked!</h2>
+  <p class="text-muted mb-2">Your token number is</p>
+  <div class="token-big" id="tokenNum">-</div>
+  <p class="text-muted mt-2" id="successDoctor"></p>
+  <p class="text-muted mb-3" id="successWait"></p>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;">
+    <button class="btn btn-primary btn-lg" onclick="trackToken()"><i class="fa-solid fa-eye"></i> Track Token</button>
+    <button class="btn btn-outline" onclick="window.location.href='home.html'"><i class="fa-solid fa-house"></i> Home</button>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script>
+if (!Auth.requireRole('patient')) {}
+let bookData = null;
+let bookedTokenId = null;
+
+try {
+  bookData = JSON.parse(sessionStorage.getItem('book_data') || 'null');
+} catch(e) {}
+if (!bookData) { window.location.href = 'home.html'; }
+
+document.getElementById('doctorName').textContent = bookData.doctorName;
+document.getElementById('doctorFee').textContent = `Consultation: ${fmt.currency(bookData.fee)}`;
+document.getElementById('doctorQueue').innerHTML = `<span class="badge badge-warning">${bookData.queue} patients ahead</span>`;
+document.getElementById('bookDate').textContent = fmt.date(new Date());
+document.getElementById('estWait').textContent = fmt.wait(bookData.queue * 10);
+document.getElementById('fee').textContent = fmt.currency(bookData.fee);
+
+document.getElementById('bookBtn').addEventListener('click', async function() {
+  const btn = this;
+  setLoading(btn, true, 'Booking…');
+  clearError('msg-area');
+  try {
+    const data = await apiFetch('/api/tokens/book', {
+      method: 'POST',
+      body: JSON.stringify({
+        doctor_id: bookData.doctorId,
+        reason: document.getElementById('reason').value.trim()
+      })
+    });
+    bookedTokenId = data.token_id;
+    document.getElementById('tokenNum').textContent = data.token_number;
+    document.getElementById('successDoctor').textContent = `Dr. ${bookData.doctorName}`;
+    document.getElementById('successWait').textContent = `Estimated wait: ${fmt.wait(data.estimated_wait_minutes)}`;
+    document.getElementById('successOverlay').classList.add('show');
+    sessionStorage.setItem('track_token', JSON.stringify({ token_id: data.token_id, token_number: data.token_number, doctor_name: bookData.doctorName }));
+  } catch(err) {
+    showError('msg-area', err.message);
+    setLoading(btn, false);
+  }
+});
+
+function trackToken() {
+  window.location.href = 'track-token.html';
+}
+</script>
+</body>
+</html>

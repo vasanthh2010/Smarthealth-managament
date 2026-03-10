@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hospital Details - Smart Hospital</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  .hero-banner { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 2rem 1.25rem; }
+  .hero-inner { max-width: 860px; margin: 0 auto; }
+  .back-btn { color: rgba(255,255,255,0.8); font-size: 0.85rem; margin-bottom: 1.25rem; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+  .back-btn:hover { color: white; }
+  .hospital-title { font-size: 1.75rem; font-weight: 800; margin-bottom: 0.3rem; }
+  .hospital-address-hero { color: rgba(255,255,255,0.75); font-size: 0.875rem; margin-bottom: 1rem; }
+  .hero-stats { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+  .hero-stat { background: rgba(255,255,255,0.12); backdrop-filter: blur(8px); border-radius: var(--radius); padding: 0.625rem 1.25rem; text-align: center; }
+  .hero-stat .val { font-size: 1.5rem; font-weight: 800; }
+  .hero-stat .lbl { font-size: 0.72rem; opacity: 0.8; }
+  .main { max-width: 860px; margin: 0 auto; padding: 1.5rem 1.25rem 100px; }
+  .section-title { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+  .doctor-card { background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.25rem; margin-bottom: 0.75rem; display: flex; gap: 1rem; align-items: center; cursor: pointer; transition: var(--transition-slow); }
+  .doctor-card:hover { border-color: var(--primary); box-shadow: var(--shadow); transform: translateY(-2px); }
+  .doctor-avatar { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-bg), #DBEAFE); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: var(--primary); flex-shrink: 0; }
+  .doctor-info { flex: 1; }
+  .doctor-name { font-weight: 700; margin-bottom: 0.2rem; }
+  .doctor-spec { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.35rem; }
+  .doctor-meta { display: flex; gap: 1rem; font-size: 0.78rem; color: var(--text-muted); flex-wrap: wrap; }
+  .bed-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.75rem; }
+  .bed-summary-card { background: white; border-radius: var(--radius); padding: 1rem; text-align: center; border: 1px solid var(--border); }
+  .bed-summary-card .ward { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.5rem; }
+  .bed-bar { display: flex; height: 8px; border-radius: var(--radius-full); overflow: hidden; margin: 0.5rem 0; }
+  .bed-bar .avail { background: var(--success); }
+  .bed-bar .occ { background: var(--danger-bg); }
+  .bed-count { font-size: 0.78rem; color: var(--text-muted); display: flex; justify-content: space-between; }
+  .tab-bar { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 1.5rem; }
+  .tab-btn { padding: 0.75rem 1.25rem; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: var(--transition); }
+  .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+</style>
+</head>
+<body>
+<div class="hero-banner">
+  <div class="hero-inner">
+    <div class="back-btn" onclick="history.back()"><i class="fa-solid fa-arrow-left"></i> Back</div>
+    <h1 class="hospital-title" id="hospName">Loading…</h1>
+    <div class="hospital-address-hero" id="hospAddress"></div>
+    <div class="hero-stats" id="heroStats">
+      <div class="hero-stat"><div class="val">-</div><div class="lbl">Doctors</div></div>
+      <div class="hero-stat"><div class="val">-</div><div class="lbl">Beds Free</div></div>
+      <div class="hero-stat"><div class="val">-</div><div class="lbl">In Queue</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="main fade-in">
+  <div class="tab-bar">
+    <div class="tab-btn active" onclick="switchTab('doctors',this)"><i class="fa-solid fa-user-doctor"></i> Doctors</div>
+    <div class="tab-btn" onclick="switchTab('beds',this)"><i class="fa-solid fa-bed"></i> Beds</div>
+    <div class="tab-btn" onclick="switchTab('info',this)"><i class="fa-solid fa-circle-info"></i> Info</div>
+  </div>
+
+  <!-- Doctors Tab -->
+  <div id="tab-doctors" class="tab-content active">
+    <div class="section-title"><i class="fa-solid fa-user-doctor"></i> Available Doctors</div>
+    <div id="doctorList">
+      <div class="text-center" style="padding:2rem"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- Beds Tab -->
+  <div id="tab-beds" class="tab-content">
+    <div class="section-title"><i class="fa-solid fa-bed"></i> Bed Availability</div>
+    <div id="bedSummary" class="bed-summary"></div>
+  </div>
+
+  <!-- Info Tab -->
+  <div id="tab-info" class="tab-content">
+    <div id="hospInfo"></div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script>
+if (!Auth.requireRole('patient')) {}
+const params = new URLSearchParams(window.location.search);
+const hospitalId = params.get('id');
+if (!hospitalId) window.location.href = 'home.html';
+
+let hospitalData = null;
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+async function loadHospital() {
+  try {
+    hospitalData = await apiFetch(`/api/hospitals/${hospitalId}`);
+    document.title = hospitalData.name + ' - Smart Hospital';
+    document.getElementById('hospName').textContent = hospitalData.name;
+    document.getElementById('hospAddress').innerHTML = `<i class="fa-solid fa-location-dot"></i> ${hospitalData.address}, ${hospitalData.city} - ${hospitalData.pincode}`;
+
+    const doctors = hospitalData.doctors || [];
+    const bedSummary = hospitalData.bed_summary || [];
+    const availBeds = bedSummary.reduce((acc, b) => acc + (b.available || 0), 0);
+    const queueCount = doctors.reduce((acc, d) => acc + (d.queue_count || 0), 0);
+
+    document.getElementById('heroStats').innerHTML = `
+      <div class="hero-stat"><div class="val">${doctors.length}</div><div class="lbl">Doctors</div></div>
+      <div class="hero-stat"><div class="val">${availBeds}</div><div class="lbl">Beds Free</div></div>
+      <div class="hero-stat"><div class="val">${queueCount}</div><div class="lbl">In Queue</div></div>
+      <div class="hero-stat"><div class="val">${hospitalData.established_year || 'N/A'}</div><div class="lbl">Est. Year</div></div>`;
+
+    // Doctors
+    if (!doctors.length) {
+      document.getElementById('doctorList').innerHTML = '<div class="alert alert-info">No doctors listed yet.</div>';
+    } else {
+      document.getElementById('doctorList').innerHTML = doctors.map(d => `
+        <div class="doctor-card" onclick="bookToken(${d.id}, '${d.name}', ${d.consultation_fee}, ${d.queue_count||0})">
+          <div class="doctor-avatar"><i class="fa-solid fa-user-doctor"></i></div>
+          <div class="doctor-info">
+            <div class="doctor-name">${d.name}</div>
+            <div class="doctor-spec">${d.specialization} · ${d.qualification || ''}</div>
+            <div class="doctor-meta">
+              <span><i class="fa-solid fa-briefcase-medical"></i> ${d.experience_years} yrs exp</span>
+              <span><i class="fa-solid fa-rupee-sign"></i> ${fmt.currency(d.consultation_fee)}</span>
+              <span><i class="fa-solid fa-people-waiting"></i> ${d.queue_count||0} waiting</span>
+            </div>
+          </div>
+          <div>
+            ${d.is_available
+              ? `<span class="badge badge-success">Available</span><br><small class="text-muted" style="font-size:0.72rem;">${fmt.wait((d.queue_count||0)*10)} wait</small>`
+              : '<span class="badge badge-danger">Unavailable</span>'}
+          </div>
+        </div>`).join('');
+    }
+
+    // Beds
+    if (!bedSummary.length) {
+      document.getElementById('bedSummary').innerHTML = '<div class="alert alert-info">No bed data available.</div>';
+    } else {
+      document.getElementById('bedSummary').innerHTML = bedSummary.map(b => {
+        const pct = b.total > 0 ? Math.round((b.available / b.total) * 100) : 0;
+        return `<div class="bed-summary-card">
+          <div class="ward">${b.ward_type}</div>
+          <div class="bed-bar">
+            <div class="avail" style="width:${pct}%"></div>
+            <div class="occ" style="flex:1"></div>
+          </div>
+          <div class="bed-count">
+            <span class="text-success">${b.available} free</span>
+            <span class="text-danger">${b.occupied} occ</span>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // Info
+    document.getElementById('hospInfo').innerHTML = `
+      <div class="card"><div class="card-body">
+        <div class="form-row">
+          <div><div class="text-muted text-small">Hospital Name</div><div class="fw-600 mt-1">${hospitalData.name}</div></div>
+          <div><div class="text-muted text-small">Established</div><div class="fw-600 mt-1">${hospitalData.established_year || 'N/A'}</div></div>
+          <div><div class="text-muted text-small">Phone</div><div class="fw-600 mt-1">${hospitalData.phone}</div></div>
+          <div><div class="text-muted text-small">Email</div><div class="fw-600 mt-1">${hospitalData.email || 'N/A'}</div></div>
+          <div><div class="text-muted text-small">City</div><div class="fw-600 mt-1">${hospitalData.city}, ${hospitalData.state}</div></div>
+          <div><div class="text-muted text-small">Pincode</div><div class="fw-600 mt-1">${hospitalData.pincode}</div></div>
+        </div>
+        ${hospitalData.description ? `<div class="divider"></div><p class="text-muted">${hospitalData.description}</p>` : ''}
+      </div></div>`;
+
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function bookToken(doctorId, doctorName, fee, queue) {
+  sessionStorage.setItem('book_data', JSON.stringify({ doctorId, doctorName, fee, queue, hospitalId }));
+  window.location.href = 'book-token.html';
+}
+
+loadHospital();
+</script>
+</body>
+</html>

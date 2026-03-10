@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Profile - Smart Hospital</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  .page { max-width: 600px; margin: 0 auto; padding: 1.5rem 1.25rem 100px; }
+  .profile-hero { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: var(--radius-xl); padding: 2rem; color: white; text-align: center; margin-bottom: 1.5rem; }
+  .avatar { width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; margin: 0 auto 1rem; border: 3px solid rgba(255,255,255,0.4); }
+  .blood-chip { display: inline-flex; align-items: center; gap: 0.3rem; background: rgba(255,255,255,0.15); padding: 0.3rem 0.75rem; border-radius: var(--radius-full); font-size: 0.82rem; margin-top: 0.25rem; }
+  .token-history-item { background: white; border-radius: var(--radius-lg); padding: 1.1rem; margin-bottom: 0.75rem; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+</style>
+</head>
+<body>
+<div class="page fade-in">
+  <div class="profile-hero">
+    <div class="avatar" id="pAvatar">?</div>
+    <h2 id="pName" style="color:white;">Loading...</h2>
+    <div style="color:rgba(255,255,255,0.75);font-size:0.85rem;" id="pEmail"></div>
+    <div id="pBlood"></div>
+  </div>
+
+  <div id="msg-area"></div>
+
+  <!-- Info Card -->
+  <div class="card mb-2">
+    <div class="card-header"><h4><i class="fa-solid fa-id-card"></i> Personal Details</h4></div>
+    <div class="card-body" id="profileDetails">
+      <div class="text-center"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- Token History -->
+  <div class="card mb-2">
+    <div class="card-header"><h4><i class="fa-solid fa-ticket"></i> My Tokens</h4></div>
+    <div class="card-body" id="tokenHistory">
+      <div class="text-center"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- Logout -->
+  <button class="btn btn-danger btn-full" onclick="logout()">
+    <i class="fa-solid fa-right-from-bracket"></i> Logout
+  </button>
+</div>
+
+<!-- Bottom Nav -->
+<nav style="position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--border);display:flex;z-index:50;">
+  <a href="home.html" style="flex:1;padding:.75rem;text-align:center;font-size:.72rem;font-weight:600;color:var(--text-muted);text-decoration:none;"><i class="fa-solid fa-house" style="display:block;font-size:1.2rem;margin-bottom:.2rem;"></i>Home</a>
+  <a href="profile.html" style="flex:1;padding:.75rem;text-align:center;font-size:.72rem;font-weight:600;color:var(--primary);text-decoration:none;"><i class="fa-solid fa-user" style="display:block;font-size:1.2rem;margin-bottom:.2rem;"></i>Profile</a>
+  <a href="track-token.html" style="flex:1;padding:.75rem;text-align:center;font-size:.72rem;font-weight:600;color:var(--text-muted);text-decoration:none;"><i class="fa-solid fa-ticket" style="display:block;font-size:1.2rem;margin-bottom:.2rem;"></i>My Tokens</a>
+  <a href="emergency.html" style="flex:1;padding:.75rem;text-align:center;font-size:.72rem;font-weight:600;color:var(--danger);text-decoration:none;"><i class="fa-solid fa-truck-medical" style="display:block;font-size:1.2rem;margin-bottom:.2rem;"></i>Emergency</a>
+</nav>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script>
+if (!Auth.requireRole('patient')) {}
+const u = Auth.getUser();
+document.getElementById('pAvatar').textContent = (u?.name||'?')[0].toUpperCase();
+document.getElementById('pName').textContent = u?.name || 'Patient';
+
+async function loadProfile() {
+  try {
+    // Load token history
+    const tokens = await apiFetch('/api/tokens/my');
+    const user = Auth.getUser();
+    document.getElementById('pEmail').textContent = user?.email || '';
+
+    document.getElementById('profileDetails').innerHTML = `
+      <div class="form-row">
+        <div><div class="text-muted text-small">Full Name</div><div class="fw-600 mt-1">${u?.name || '-'}</div></div>
+        <div><div class="text-muted text-small">Role</div><div class="fw-600 mt-1">Patient</div></div>
+      </div>
+      <p class="text-small text-muted mt-2">Update your personal details by contacting support.</p>
+    `;
+
+    if (!tokens.length) {
+      document.getElementById('tokenHistory').innerHTML = '<div class="text-center text-muted" style="padding:1rem;">No tokens yet. <a href="home.html" class="text-primary fw-600">Book now →</a></div>';
+      return;
+    }
+    document.getElementById('tokenHistory').innerHTML = tokens.slice(0, 8).map(t => `
+      <div class="token-history-item">
+        <div>
+          <div class="fw-600">${t.doctor_name}</div>
+          <div class="text-muted text-small">${t.specialization} · ${t.hospital_name}</div>
+          <div class="text-muted text-small">${fmt.date(t.booking_date)}</div>
+        </div>
+        <div class="text-right">
+          <div class="fw-700 text-primary">#${t.token_number}</div>
+          ${fmt.badge(t.status)}
+        </div>
+      </div>`).join('');
+  } catch(err) {
+    showError('msg-area', err.message);
+  }
+}
+
+function logout() {
+  Auth.clearSession();
+  window.location.href = '../index.html';
+}
+
+loadProfile();
+</script>
+</body>
+</html>

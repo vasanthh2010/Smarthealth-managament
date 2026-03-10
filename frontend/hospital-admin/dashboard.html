@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hospital Dashboard - Smart Hospital</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  .queue-row { display: flex; gap: 1rem; align-items: center; padding: 0.875rem 1rem; border-bottom: 1px solid var(--border); }
+  .queue-row:last-child { border-bottom: none; }
+  .q-token { font-size: 1.5rem; font-weight: 800; color: var(--primary); min-width: 48px; }
+  .q-info { flex: 1; }
+  .q-name { font-weight: 600; font-size: 0.9rem; }
+  .q-sub { font-size: 0.78rem; color: var(--text-muted); }
+  .q-actions { display: flex; gap: 0.5rem; }
+  .doctor-toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--border); }
+  .doctor-toggle-row:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+<div class="dashboard-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="brand"><i class="fa-solid fa-hospital-user"></i> <span>Hospital</span> Admin</div>
+      <div style="font-size:.75rem;color:rgba(255,255,255,.4);margin-top:.25rem;" id="sideHospitalName">Loading…</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Management</div>
+      <a href="dashboard.html" class="nav-item active"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+      <a href="beds.html" class="nav-item"><i class="fa-solid fa-bed"></i> Bed Management</a>
+      <a href="queue.html" class="nav-item"><i class="fa-solid fa-people-waiting"></i> Patient Queue</a>
+      <a href="doctors.html" class="nav-item"><i class="fa-solid fa-user-doctor"></i> Doctors</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn btn-ghost btn-sm w-full" onclick="logout()" style="color:rgba(255,255,255,.6);justify-content:flex-start;">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+      </button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h3 id="hospTitle">Dashboard</h3>
+        <div class="text-muted text-small" id="dateLabel"></div>
+      </div>
+      <div class="d-flex gap-1 align-center">
+        <span class="badge badge-success badge-dot">Live</span>
+        <button class="btn btn-primary btn-sm" onclick="loadAll()"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div id="msg-area"></div>
+
+      <!-- Stats -->
+      <div class="stats-grid mb-3" id="statsGrid">
+        <div class="stat-card"><div class="skeleton skeleton-line" style="width:60%;margin-bottom:.5rem;"></div><div class="skeleton" style="height:32px;width:40%;"></div></div>
+        <div class="stat-card"><div class="skeleton skeleton-line" style="width:60%;margin-bottom:.5rem;"></div><div class="skeleton" style="height:32px;width:40%;"></div></div>
+        <div class="stat-card"><div class="skeleton skeleton-line" style="width:60%;margin-bottom:.5rem;"></div><div class="skeleton" style="height:32px;width:40%;"></div></div>
+        <div class="stat-card"><div class="skeleton skeleton-line" style="width:60%;margin-bottom:.5rem;"></div><div class="skeleton" style="height:32px;width:40%;"></div></div>
+      </div>
+
+      <div class="two-col">
+        <!-- Today's Queue -->
+        <div>
+          <h4 class="mb-2"><i class="fa-solid fa-people-waiting"></i> Today's Queue</h4>
+          <div class="card" id="queueCard">
+            <div class="text-center" style="padding:2rem"><div class="spinner"></div></div>
+          </div>
+        </div>
+        <!-- Doctors -->
+        <div>
+          <h4 class="mb-2"><i class="fa-solid fa-user-doctor"></i> Doctors Status</h4>
+          <div class="card" id="doctorsCard">
+            <div class="text-center" style="padding:2rem"><div class="spinner"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script>
+if (!Auth.requireRole('hospital_admin')) {}
+const u = Auth.getUser();
+document.getElementById('sideHospitalName').textContent = u?.name || '';
+document.getElementById('hospTitle').textContent = u?.name || 'Dashboard';
+document.getElementById('dateLabel').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+async function loadStats() {
+  try {
+    const stats = await apiFetch('/api/hospitals/my/stats');
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card"><div class="stat-label">Beds Available</div><div class="stat-value text-success">${stats.available_beds}</div><div class="stat-sub">of ${stats.total_beds} total</div></div>
+      <div class="stat-card"><div class="stat-label">Today's Patients</div><div class="stat-value text-primary">${stats.today_patients}</div><div class="stat-sub">${stats.completed_today} completed</div></div>
+      <div class="stat-card"><div class="stat-label">Pending Queue</div><div class="stat-value text-warning">${stats.pending_today}</div><div class="stat-sub">waiting now</div></div>
+      <div class="stat-card"><div class="stat-label">Available Doctors</div><div class="stat-value">${stats.available_doctors}</div><div class="stat-sub">of ${stats.total_doctors} total</div></div>
+    `;
+  } catch(e) {}
+}
+
+async function loadQueue() {
+  try {
+    const tokens = await apiFetch('/api/tokens/hospital/today');
+    const pending = tokens.filter(t => ['pending','in_service'].includes(t.status));
+    if (!pending.length) {
+      document.getElementById('queueCard').innerHTML = '<div class="text-center text-muted" style="padding:2rem;">No patients in queue today</div>';
+      return;
+    }
+    document.getElementById('queueCard').innerHTML = pending.slice(0, 8).map(t => `
+      <div class="queue-row">
+        <div class="q-token">#${t.token_number}</div>
+        <div class="q-info">
+          <div class="q-name">${t.patient_name}</div>
+          <div class="q-sub">${t.doctor_name} · ${t.patient_phone}</div>
+        </div>
+        <div class="q-actions">
+          ${t.status === 'pending'
+            ? `<button class="btn btn-primary btn-sm" onclick="updateToken(${t.id},'in_service')">Call</button>`
+            : `<button class="btn btn-success btn-sm" onclick="updateToken(${t.id},'completed')">Done</button>`}
+        </div>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+async function loadDoctors() {
+  try {
+    const doctors = await apiFetch('/api/doctors/my');
+    if (!doctors.length) {
+      document.getElementById('doctorsCard').innerHTML = '<div class="text-center text-muted" style="padding:2rem;">No doctors. <a href="doctors.html">Add doctors</a></div>';
+      return;
+    }
+    document.getElementById('doctorsCard').innerHTML = doctors.map(d => `
+      <div class="doctor-toggle-row">
+        <div>
+          <div class="fw-600">${d.name}</div>
+          <div class="text-muted text-small">${d.specialization} · ${d.queue_count||0} waiting</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" ${d.is_available ? 'checked' : ''} onchange="toggleDoc(${d.id},this.checked)">
+          <span class="toggle-slider"></span>
+          <span class="text-small">${d.is_available ? 'On' : 'Off'}</span>
+        </label>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+async function updateToken(id, status) {
+  try {
+    await apiFetch(`/api/tokens/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) });
+    showToast('Queue updated', 'success');
+    loadQueue(); loadStats();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function toggleDoc(id, available) {
+  try {
+    await apiFetch(`/api/doctors/${id}/availability`, { method: 'PUT', body: JSON.stringify({ is_available: available }) });
+    showToast('Doctor status updated', 'success');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+function loadAll() { loadStats(); loadQueue(); loadDoctors(); }
+function logout() { Auth.clearSession(); window.location.href = '../index.html'; }
+
+loadAll();
+setInterval(loadAll, 30000);
+</script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patient Management - Super Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  .sidebar { background: #111827; }
+</style>
+</head>
+<body>
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="brand"><i class="fa-solid fa-shield-halved"></i> <span>Super</span> Admin</div>
+      <div style="font-size:.72rem;color:rgba(255,255,255,.4);margin-top:.25rem;" id="adminName">Loading…</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">System</div>
+      <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+      <a href="hospitals.html" class="nav-item"><i class="fa-solid fa-hospital"></i> Hospitals</a>
+      <a href="patients.html" class="nav-item active"><i class="fa-solid fa-users"></i> Patients</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn btn-ghost btn-sm w-full" onclick="logout()" style="color:rgba(255,255,255,.6);justify-content:flex-start;"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div><h3>Patient Management</h3><div class="text-muted text-small" id="patientCount">Loading...</div></div>
+      <div class="d-flex gap-1">
+        <div class="search-bar" style="padding:.5rem 1rem;">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="searchInput" placeholder="Search by name, email or phone…" style="border:none;outline:none;font-size:.875rem;background:transparent;width:240px;">
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="loadPatients()"><i class="fa-solid fa-rotate-right"></i></button>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div id="msg-area"></div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Patient</th>
+              <th>Contact</th>
+              <th>Blood</th>
+              <th>Age</th>
+              <th>Gender</th>
+              <th>Registered</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="patientBody">
+            <tr><td colspan="9" class="text-center" style="padding:2rem;"><div class="spinner" style="margin:auto;"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script>
+if (!Auth.requireRole('super_admin')) {}
+document.getElementById('adminName').textContent = Auth.getUser()?.name || '';
+
+let searchTimer;
+document.getElementById('searchInput').addEventListener('input', function() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => loadPatients(this.value), 350);
+});
+
+async function loadPatients(search = '') {
+  try {
+    const patients = await apiFetch(`/api/admin/patients${search ? '?search='+encodeURIComponent(search) : ''}`);
+    document.getElementById('patientCount').textContent = `${patients.length} registered patient${patients.length !== 1 ? 's' : ''}`;
+
+    if (!patients.length) {
+      document.getElementById('patientBody').innerHTML = '<tr><td colspan="9" class="text-center text-muted" style="padding:2rem;">No patients found</td></tr>';
+      return;
+    }
+    document.getElementById('patientBody').innerHTML = patients.map(p => `
+      <tr>
+        <td class="text-muted text-small">${p.id}</td>
+        <td>
+          <div class="fw-600">${p.full_name}</div>
+          <div class="text-muted text-small">${p.email}</div>
+          <div class="text-muted text-small" style="font-size:.72rem;">${p.address ? p.address.substring(0,40)+'…' : ''}</div>
+        </td>
+        <td class="text-small">${p.phone}</td>
+        <td>
+          <span class="badge badge-danger" style="font-family:monospace;">${p.blood_group}</span>
+        </td>
+        <td class="text-small">${p.age}</td>
+        <td class="text-small">${fmt.capitalize(p.gender)}</td>
+        <td class="text-muted text-small">${fmt.date(p.created_at)}</td>
+        <td>${p.is_active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>'}</td>
+        <td>
+          <button class="btn btn-sm" style="background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger);"
+            onclick="deletePatient(${p.id},'${p.full_name.replace("'","\\'")}')">
+            <i class="fa-solid fa-trash"></i> Remove
+          </button>
+        </td>
+      </tr>`).join('');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deletePatient(id, name) {
+  if (!confirm(`⚠️ Remove patient "${name}"?\n\nThis will permanently delete their account and all booking history. Continue?`)) return;
+  try {
+    await apiFetch(`/api/admin/patients/${id}`, { method: 'DELETE' });
+    showToast(`Patient "${name}" removed`, 'success');
+    loadPatients(document.getElementById('searchInput').value);
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+function logout() { Auth.clearSession(); window.location.href = '../index.html'; }
+loadPatients();
+</script>
+</body>
+</html>

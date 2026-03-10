@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hospital Admin Login - Smart Hospital</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  body { background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+  .login-box { width: 100%; max-width: 440px; }
+  .login-card { background: white; border-radius: var(--radius-xl); padding: 2.5rem; box-shadow: var(--shadow-xl); border: 1px solid var(--border); }
+  .login-logo { text-align: center; margin-bottom: 2rem; }
+  .login-logo .icon { width: 64px; height: 64px; background: linear-gradient(135deg, var(--success), #4ADE80); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; color: white; margin: 0 auto 0.75rem; box-shadow: 0 8px 24px rgba(22,163,74,0.3); }
+  .info-box { background: var(--success-bg); border-radius: var(--radius); padding: 0.875rem 1rem; margin-bottom: 1.25rem; font-size: 0.85rem; color: var(--success); border-left: 3px solid var(--success); }
+</style>
+</head>
+<body>
+<div class="login-box fade-in">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="icon"><i class="fa-solid fa-hospital-user"></i></div>
+      <h2>Hospital Admin</h2>
+      <p style="color:var(--text-muted);font-size:.875rem;">Sign in with your assigned hospital credentials</p>
+    </div>
+
+    <div class="info-box">
+      <i class="fa-solid fa-circle-info"></i> Your <b>Login ID</b> and <b>Password</b> are provided by the Super Admin after your hospital is approved.
+    </div>
+    
+    <div style="text-align:center;margin-bottom:1.5rem;">
+      <a href="signup.html" class="btn btn-ghost btn-sm">New Hospital? Apply for Registration Here</a>
+    </div>
+
+    <div id="msg-area"></div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="form-label">Hospital Login ID</label>
+        <div class="input-group">
+          <i class="input-icon fa-solid fa-id-badge"></i>
+          <input type="text" class="form-control" id="login_id" placeholder="e.g. HOSP-CITY1234" required autofocus>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-group">
+          <i class="input-icon fa-solid fa-lock"></i>
+          <input type="password" class="form-control has-right-icon" id="password" placeholder="Your admin password" required>
+          <i class="input-icon-right fa-solid fa-eye" onclick="togglePwd()"></i>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-success btn-full btn-lg mt-2" id="loginBtn">
+        <i class="fa-solid fa-right-to-bracket"></i> Login to Hospital Dashboard
+      </button>
+    </form>
+  </div>
+  <div style="text-align:center;margin-top:1rem;"><a href="../index.html" class="text-muted text-small">← Back to Home</a></div>
+</div>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script>
+if (Auth.isLoggedIn() && Auth.getUser()?.role === 'hospital_admin') {
+  window.location.href = 'dashboard.html';
+}
+function togglePwd() {
+  const input = document.getElementById('password');
+  const icon = document.querySelector('.input-icon-right');
+  if (input.type === 'password') { input.type = 'text'; icon.className = 'input-icon-right fa-solid fa-eye-slash'; }
+  else { input.type = 'password'; icon.className = 'input-icon-right fa-solid fa-eye'; }
+}
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  clearError('msg-area');
+  const btn = document.getElementById('loginBtn');
+  setLoading(btn, true, 'Signing in...');
+  try {
+    const data = await apiFetch('/api/auth/hospital/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        login_id: document.getElementById('login_id').value.trim().toUpperCase(),
+        password: document.getElementById('password').value
+      })
+    });
+    Auth.setSession(data.token, { hospital_id: data.hospital_id, name: data.name, role: 'hospital_admin' });
+    showToast(`Welcome, ${data.name}! 🏥`, 'success');
+    setTimeout(() => window.location.href = 'dashboard.html', 1000);
+  } catch(err) {
+    showError('msg-area', err.message);
+    setLoading(btn, false);
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Find Hospitals - Smart Hospital</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  .top-bar { background: white; border-bottom: 1px solid var(--border); padding: 1rem 1.25rem; position: sticky; top: 0; z-index: 50; }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; max-width: 960px; margin: 0 auto; }
+  .brand { font-weight: 800; font-size: 1.1rem; color: var(--primary); white-space: nowrap; }
+  .search-wrapper { flex: 1; max-width: 400px; }
+  .user-menu { display: flex; align-items: center; gap: 0.5rem; }
+  .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary-bg); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
+  .main { max-width: 960px; margin: 0 auto; padding: 1.5rem 1.25rem 100px; }
+  .view-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+  .view-tab { padding: 0.5rem 1.25rem; border-radius: var(--radius-full); font-size: 0.875rem; font-weight: 600; cursor: pointer; border: 1.5px solid var(--border); background: white; color: var(--text-muted); transition: var(--transition); }
+  .view-tab.active { background: var(--primary); border-color: var(--primary); color: white; }
+  #mapView { height: 320px; border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1.5rem; display: none; box-shadow: var(--shadow); }
+  .hospital-card { background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.25rem; margin-bottom: 0.875rem; display: flex; gap: 1.25rem; align-items: flex-start; transition: var(--transition-slow); cursor: pointer; }
+  .hospital-card:hover { box-shadow: var(--shadow-lg); border-color: var(--primary); transform: translateY(-2px); }
+  .hospital-icon { width: 52px; height: 52px; background: var(--primary-bg); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--primary); flex-shrink: 0; }
+  .hospital-info { flex: 1; }
+  .hospital-name { font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem; }
+  .hospital-addr { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.625rem; }
+  .hospital-meta { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .meta-tag { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; color: var(--text-muted); }
+  .hospital-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; flex-shrink: 0; }
+  .queue-badge { font-size: 0.75rem; font-weight: 600; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .section-header h2 { font-size: 1.1rem; }
+  .filter-chips { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .chip { padding: 0.35rem 0.875rem; border-radius: var(--radius-full); font-size: 0.8rem; font-weight: 500; cursor: pointer; border: 1.5px solid var(--border); background: white; color: var(--text-muted); transition: var(--transition); }
+  .chip.active { border-color: var(--primary); background: var(--primary-bg); color: var(--primary); }
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <div class="nav-inner">
+    <div class="brand"><i class="fa-solid fa-hospital"></i> SmartHospital</div>
+    <div class="search-wrapper">
+      <div class="search-bar">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="searchInput" placeholder="Search hospitals by name or city…">
+      </div>
+    </div>
+    <div class="user-menu">
+      <a href="emergency.html" class="btn btn-danger btn-sm"><i class="fa-solid fa-ambulance"></i> Emergency</a>
+      <div class="user-avatar" id="userAvatar" title="My Profile" onclick="window.location.href='profile.html'">P</div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <!-- Greeting -->
+  <div class="mb-2">
+    <h2 id="greeting">Good day! 👋</h2>
+    <p class="text-muted text-small">Find hospitals, check availability & book your token</p>
+  </div>
+
+  <!-- View Toggle -->
+  <div class="view-tabs">
+    <button class="view-tab active" onclick="switchView('list',this)"><i class="fa-solid fa-list"></i> List</button>
+    <button class="view-tab" onclick="switchView('map',this)"><i class="fa-solid fa-map-location-dot"></i> Map</button>
+  </div>
+
+  <!-- Map -->
+  <div id="mapView"></div>
+
+  <!-- Filters -->
+  <div class="filter-chips">
+    <span class="chip active" onclick="filterChip(this,'all')">All Hospitals</span>
+    <span class="chip" onclick="filterChip(this,'beds')"><i class="fa-solid fa-bed"></i> Beds Available</span>
+    <span class="chip" onclick="filterChip(this,'doctors')"><i class="fa-solid fa-user-doctor"></i> Doctors Available</span>
+  </div>
+
+  <!-- Hospital List -->
+  <div class="section-header">
+    <h2>Nearby Hospitals</h2>
+    <span class="text-muted text-small" id="countLabel"></span>
+  </div>
+
+  <div id="hospitalList">
+    <div style="text-align:center;padding:3rem 0;">
+      <div class="spinner"></div>
+      <p class="mt-2 text-muted">Loading hospitals...</p>
+    </div>
+  </div>
+</div>
+
+<!-- Emergency FAB -->
+<a href="emergency.html" class="fab" title="Emergency">🚨</a>
+
+<!-- Bottom Nav -->
+<nav style="position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--border);display:flex;z-index:50;">
+  <a href="home.html" style="flex:1;padding:0.75rem;text-align:center;font-size:0.72rem;font-weight:600;color:var(--primary);text-decoration:none;"><i class="fa-solid fa-house" style="display:block;font-size:1.2rem;margin-bottom:0.2rem;"></i>Home</a>
+  <a href="profile.html" style="flex:1;padding:0.75rem;text-align:center;font-size:0.72rem;font-weight:600;color:var(--text-muted);text-decoration:none;"><i class="fa-solid fa-user" style="display:block;font-size:1.2rem;margin-bottom:0.2rem;"></i>Profile</a>
+  <a href="track-token.html" style="flex:1;padding:0.75rem;text-align:center;font-size:0.72rem;font-weight:600;color:var(--text-muted);text-decoration:none;"><i class="fa-solid fa-ticket" style="display:block;font-size:1.2rem;margin-bottom:0.2rem;"></i>My Tokens</a>
+  <a href="emergency.html" style="flex:1;padding:0.75rem;text-align:center;font-size:0.72rem;font-weight:600;color:var(--danger);text-decoration:none;"><i class="fa-solid fa-truck-medical" style="display:block;font-size:1.2rem;margin-bottom:0.2rem;"></i>Emergency</a>
+</nav>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+if (!Auth.requireRole('patient')) {}
+
+const user = Auth.getUser();
+document.getElementById('userAvatar').textContent = (user?.name || 'P')[0].toUpperCase();
+const hour = new Date().getHours();
+document.getElementById('greeting').textContent =
+  (hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening') +
+  `, ${(user?.name||'').split(' ')[0]}! 👋`;
+
+let allHospitals = [];
+let activeFilter = 'all';
+let map = null;
+
+async function loadHospitals(search = '') {
+  try {
+    const params = search ? `?search=${encodeURIComponent(search)}` : '';
+    allHospitals = await apiFetch('/api/hospitals' + params);
+    renderHospitals();
+    renderMap();
+  } catch (err) {
+    document.getElementById('hospitalList').innerHTML = `
+      <div class="alert alert-error">${err.message}</div>`;
+  }
+}
+
+function renderHospitals() {
+  let list = allHospitals;
+  if (activeFilter === 'beds') list = list.filter(h => h.available_beds > 0);
+  if (activeFilter === 'doctors') list = list.filter(h => h.doctor_count > 0);
+
+  document.getElementById('countLabel').textContent = `${list.length} hospital${list.length !== 1 ? 's' : ''}`;
+
+  if (!list.length) {
+    document.getElementById('hospitalList').innerHTML =
+      '<div class="text-center" style="padding:3rem 0;"><i class="fa-solid fa-hospital" style="font-size:3rem;color:var(--border);"></i><p class="mt-2 text-muted">No hospitals found</p></div>';
+    return;
+  }
+  document.getElementById('hospitalList').innerHTML = list.map(h => `
+    <div class="hospital-card fade-in" onclick="window.location.href='hospital-detail.html?id=${h.id}'">
+      <div class="hospital-icon"><i class="fa-solid fa-hospital-alt"></i></div>
+      <div class="hospital-info">
+        <div class="hospital-name">${h.name}</div>
+        <div class="hospital-addr"><i class="fa-solid fa-location-dot"></i> ${h.address}, ${h.city}</div>
+        <div class="hospital-meta">
+          <span class="meta-tag"><i class="fa-solid fa-user-doctor"></i> ${h.doctor_count} doctors</span>
+          <span class="meta-tag"><i class="fa-solid fa-bed"></i> ${h.available_beds}/${h.total_bed_count} beds</span>
+          <span class="meta-tag"><i class="fa-solid fa-people-waiting"></i> ${h.queue_count} in queue</span>
+        </div>
+      </div>
+      <div class="hospital-right">
+        ${h.available_beds > 0
+          ? '<span class="badge badge-success badge-dot">Beds Free</span>'
+          : '<span class="badge badge-danger badge-dot">Full</span>'}
+        <span class="badge badge-primary queue-badge">${h.queue_count} waiting</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderMap() {
+  if (!map) {
+    map = L.map('mapView').setView([20.5937, 78.9629], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+  }
+  const withCoords = allHospitals.filter(h => h.location_lat && h.location_lng);
+  if (withCoords.length) {
+    withCoords.forEach(h => {
+      const color = h.available_beds > 0 ? '#16A34A' : '#DC2626';
+      const icon = L.divIcon({
+        html: `<div style="background:${color};color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:0 2px 8px rgba(0,0,0,0.3);border:2px solid white;">🏥</div>`,
+        iconSize: [32, 32], iconAnchor: [16, 16], className: ''
+      });
+      L.marker([h.location_lat, h.location_lng], { icon })
+        .addTo(map)
+        .bindPopup(`<b>${h.name}</b><br>${h.address}<br>Beds: ${h.available_beds} available`);
+    });
+    const bounds = withCoords.map(h => [h.location_lat, h.location_lng]);
+    map.fitBounds(bounds, { padding: [40, 40] });
+  }
+}
+
+function switchView(view, btn) {
+  document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  const mapEl = document.getElementById('mapView');
+  if (view === 'map') { mapEl.style.display = 'block'; setTimeout(() => map && map.invalidateSize(), 100); }
+  else mapEl.style.display = 'none';
+}
+
+function filterChip(el, filter) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  activeFilter = filter;
+  renderHospitals();
+}
+
+let searchTimer;
+document.getElementById('searchInput').addEventListener('input', function() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => loadHospitals(this.value), 350);
+});
+
+loadHospitals();
+</script>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hospital Management - Super Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  .sidebar { background: #111827; }
+  .approved-creds { background: var(--success-bg); border: 1px solid var(--success); border-radius: var(--radius); padding: 1rem; font-size: .85rem; }
+  .approved-creds .cred-row { display: flex; align-items: center; gap: .5rem; margin-bottom: .3rem; }
+  .cred-val { font-family: monospace; background: white; padding: .15rem .5rem; border-radius: 4px; font-weight: 700; color: var(--primary); letter-spacing: .05em; }
+</style>
+</head>
+<body>
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="brand"><i class="fa-solid fa-shield-halved"></i> <span>Super</span> Admin</div>
+      <div style="font-size:.72rem;color:rgba(255,255,255,.4);margin-top:.25rem;" id="adminName">Loading…</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">System</div>
+      <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+      <a href="hospitals.html" class="nav-item active"><i class="fa-solid fa-hospital"></i> Hospitals</a>
+      <a href="patients.html" class="nav-item"><i class="fa-solid fa-users"></i> Patients</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn btn-ghost btn-sm w-full" onclick="logout()" style="color:rgba(255,255,255,.6);justify-content:flex-start;"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div><h3>Hospital Management</h3><div class="text-muted text-small">Register, approve & manage hospitals</div></div>
+      <div class="d-flex gap-1">
+        <select class="form-control" id="statusFilter" onchange="loadHospitals()" style="width:auto;">
+          <option value="all">All</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="loadAll()"><i class="fa-solid fa-rotate-right"></i></button>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <!-- Pending Registrations -->
+      <h4 class="mb-2"><i class="fa-solid fa-clock text-warning"></i> Registration Requests</h4>
+      <div id="regList" class="mb-3">
+        <div class="text-center" style="padding:2rem;"><div class="spinner"></div></div>
+      </div>
+
+      <h4 class="mb-2"><i class="fa-solid fa-hospital text-primary"></i> All Hospitals</h4>
+      <div id="msg-area"></div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Hospital</th><th>City</th><th>Beds</th><th>Doctors</th><th>Status</th><th>Login ID</th><th>Password</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="hospitalBody">
+            <tr><td colspan="8" class="text-center" style="padding:2rem;"><div class="spinner" style="margin:auto;"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Credentials Modal -->
+<div class="modal-overlay" id="credsModal">
+  <div class="modal">
+    <div class="modal-header" style="background:var(--success-bg);">
+      <h4 style="color:var(--success);">✅ Hospital Approved!</h4>
+      <button class="modal-close" onclick="closeModal('credsModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="text-muted mb-2">Share these credentials securely with the hospital. They will NOT be shown again.</p>
+      <div class="approved-creds">
+        <div class="cred-row"><span>Login ID:</span> <span class="cred-val" id="credLoginId">-</span></div>
+        <div class="cred-row"><span>Password:</span> <span class="cred-val" id="credPassword">-</span></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeModal('credsModal')"><i class="fa-solid fa-check"></i> Noted, Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hospital Detail Modal -->
+<div class="modal-overlay" id="hospDetailModal">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header"><h4 id="detailTitle">Hospital Details</h4><button class="modal-close" onclick="closeModal('hospDetailModal')">✕</button></div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('hospDetailModal')">Close</button>
+      <button class="btn btn-success" id="detailApproveBtn">Approve Hospital</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script>
+if (!Auth.requireRole('super_admin')) {}
+document.getElementById('adminName').textContent = Auth.getUser()?.name || '';
+
+let currentRegId = null;
+
+async function loadRegistrations() {
+  try {
+    const regs = await apiFetch('/api/admin/registrations');
+    const pending = regs.filter(r => r.status === 'pending');
+    if (!pending.length) {
+      document.getElementById('regList').innerHTML = '<div class="alert alert-success">✅ No pending registration requests.</div>';
+      return;
+    }
+    document.getElementById('regList').innerHTML = pending.map(r => `
+      <div class="card mb-2">
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.75rem;">
+            <div>
+              <div class="fw-700" style="font-size:1rem;">${r.name}</div>
+              <div class="text-muted text-small"><i class="fa-solid fa-location-dot"></i> ${r.address}, ${r.city}, ${r.state} - ${r.pincode}</div>
+              <div class="text-muted text-small mt-1">📞 ${r.phone} · 📧 ${r.email}</div>
+              <div class="text-muted text-small mt-1">Contact: <b>${r.contact_person}</b>${r.contact_designation ? ` (${r.contact_designation})` : ''}</div>
+              ${r.established_year ? `<div class="text-muted text-small mt-1">Est. ${r.established_year} · ${r.total_beds} beds</div>` : ''}
+              ${r.description ? `<div class="text-muted text-small mt-1" style="max-width:400px;">${r.description}</div>` : ''}
+              ${r.doctors_info && r.doctors_info.length ? `<div class="text-small mt-1 text-primary fw-600">${r.doctors_info.length} doctor(s) listed</div>` : ''}
+            </div>
+            <div style="display:flex;flex-direction:column;gap:.5rem;align-items:flex-end;">
+              <div class="text-muted text-small">${fmt.date(r.created_at)}</div>
+              <button class="btn btn-success btn-sm" onclick="approveRegistration(${r.id})"><i class="fa-solid fa-check"></i> Approve</button>
+              <button class="btn btn-sm" style="background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger);" onclick="rejectRegistration(${r.id})">Reject</button>
+            </div>
+          </div>
+        </div>
+      </div>`).join('');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function loadHospitals() {
+  const statusF = document.getElementById('statusFilter').value;
+  try {
+    const hospitals = await apiFetch(`/api/admin/hospitals${statusF !== 'all' ? '?status='+statusF : ''}`);
+    if (!hospitals.length) {
+      document.getElementById('hospitalBody').innerHTML = '<tr><td colspan="8" class="text-center text-muted" style="padding:2rem;">No hospitals found</td></tr>';
+      return;
+    }
+    document.getElementById('hospitalBody').innerHTML = hospitals.map(h => `
+      <tr>
+        <td class="text-muted text-small">${h.id}</td>
+        <td>
+          <div class="fw-600">${h.name}</div>
+          <div class="text-muted text-small">${h.phone}</div>
+        </td>
+        <td>${h.city}</td>
+        <td class="text-center">${h.bed_count || '-'}</td>
+        <td class="text-center">${h.doctor_count || '-'}</td>
+        <td>${fmt.badge(h.status)}</td>
+        <td class="text-small"><span style="font-family:monospace;">${h.login_id || '-'}</span></td>
+        <td class="text-small"><span style="font-family:monospace; color:var(--primary);">${h.demo_password || '-'}</span></td>
+        <td>
+          ${h.status === 'pending' ? `<button class="btn btn-success btn-sm" onclick="approveExisting(${h.id})">Approve</button> ` : ''}
+          <button class="btn btn-sm" style="background:var(--danger-bg);color:var(--danger);" onclick="deleteHospital(${h.id},'${h.name}')"><i class="fa-solid fa-trash"></i></button>
+        </td>
+      </tr>`).join('');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function approveRegistration(regId) {
+  if (!confirm('Approve this hospital registration and generate login credentials?')) return;
+  try {
+    const data = await apiFetch(`/api/admin/registrations/${regId}/approve`, { method: 'POST' });
+    document.getElementById('credLoginId').textContent = data.login_id;
+    document.getElementById('credPassword').textContent = data.password;
+    openModal('credsModal');
+    showToast('Hospital approved!', 'success');
+    loadAll();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function rejectRegistration(regId) {
+  if (!confirm('Reject this registration request?')) return;
+  try {
+    await apiFetch(`/api/admin/registrations/${regId}/reject`, { method: 'POST' });
+    showToast('Registration rejected', 'success');
+    loadRegistrations();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function approveExisting(id) {
+  if (!confirm('Approve this hospital and generate credentials?')) return;
+  try {
+    const data = await apiFetch(`/api/admin/hospitals/${id}/approve`, { method: 'POST' });
+    document.getElementById('credLoginId').textContent = data.login_id;
+    document.getElementById('credPassword').textContent = data.password;
+    openModal('credsModal');
+    showToast('Hospital approved!', 'success');
+    loadHospitals();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteHospital(id, name) {
+  if (!confirm(`⚠️ Permanently remove "${name}" and all its data? This cannot be undone.`)) return;
+  try {
+    await apiFetch(`/api/admin/hospitals/${id}`, { method: 'DELETE' });
+    showToast(`"${name}" removed`, 'success');
+    loadAll();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+function loadAll() { loadRegistrations(); loadHospitals(); }
+function logout() { Auth.clearSession(); window.location.href = '../index.html'; }
+loadAll();
+</script>
+</body>
+</html>

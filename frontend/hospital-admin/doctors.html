@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Doctors - Smart Hospital</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="brand"><i class="fa-solid fa-hospital-user"></i> <span>Hospital</span> Admin</div>
+      <div style="font-size:.75rem;color:rgba(255,255,255,.4);margin-top:.25rem;" id="sideHospitalName">Loading…</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Management</div>
+      <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+      <a href="beds.html" class="nav-item"><i class="fa-solid fa-bed"></i> Bed Management</a>
+      <a href="queue.html" class="nav-item"><i class="fa-solid fa-people-waiting"></i> Patient Queue</a>
+      <a href="doctors.html" class="nav-item active"><i class="fa-solid fa-user-doctor"></i> Doctors</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn btn-ghost btn-sm w-full" onclick="logout()" style="color:rgba(255,255,255,.6);justify-content:flex-start;"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div><h3>Doctors</h3><div class="text-muted text-small">Manage your hospital's medical staff</div></div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('addDocModal')"><i class="fa-solid fa-plus"></i> Add Doctor</button>
+    </div>
+    <div class="page-content">
+      <div id="msg-area"></div>
+      <div class="cards-grid" id="docGrid">
+        <div class="text-center" style="grid-column:1/-1;padding:3rem;"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Add Doctor Modal -->
+<div class="modal-overlay" id="addDocModal">
+  <div class="modal">
+    <div class="modal-header"><h4>Add Doctor</h4><button class="modal-close" onclick="closeModal('addDocModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Full Name *</label><input type="text" class="form-control" id="dName" placeholder="Dr. Full Name"></div>
+        <div class="form-group"><label class="form-label">Specialization *</label><input type="text" class="form-control" id="dSpec" placeholder="e.g. Cardiology"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Qualification</label><input type="text" class="form-control" id="dQual" placeholder="e.g. MBBS, MD"></div>
+        <div class="form-group"><label class="form-label">Experience (years)</label><input type="number" class="form-control" id="dExp" placeholder="0" min="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Consultation Fee (₹)</label><input type="number" class="form-control" id="dFee" placeholder="500" min="0"></div>
+        <div class="form-group"><label class="form-label">Avg. Minutes/Patient</label><input type="number" class="form-control" id="dAvgMin" placeholder="10" min="1"></div>
+      </div>
+      <div id="addDocMsg"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addDocModal')">Cancel</button>
+      <button class="btn btn-primary" id="addDocBtn" onclick="addDoctor()"><i class="fa-solid fa-plus"></i> Add</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script>
+if (!Auth.requireRole('hospital_admin')) {}
+document.getElementById('sideHospitalName').textContent = Auth.getUser()?.name || '';
+
+async function loadDoctors() {
+  try {
+    const docs = await apiFetch('/api/doctors/my');
+    if (!docs.length) {
+      document.getElementById('docGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--text-muted);">No doctors yet. <button class="btn btn-primary btn-sm" onclick="openModal(\'addDocModal\')">Add first doctor</button></div>';
+      return;
+    }
+    document.getElementById('docGrid').innerHTML = docs.map(d => `
+      <div class="card">
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.875rem;">
+            <div style="display:flex;gap:.75rem;align-items:center;">
+              <div style="width:44px;height:44px;border-radius:50%;background:var(--primary-bg);display:flex;align-items:center;justify-content:center;font-size:1.25rem;color:var(--primary);">
+                <i class="fa-solid fa-user-doctor"></i>
+              </div>
+              <div>
+                <div class="fw-700">${d.name}</div>
+                <div class="text-muted text-small">${d.specialization}</div>
+              </div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" ${d.is_available ? 'checked' : ''} onchange="toggleAvail(${d.id},this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="text-muted text-small mb-1">${d.qualification || '-'}</div>
+          <div style="display:flex;gap:1rem;font-size:.8rem;color:var(--text-muted);flex-wrap:wrap;margin-bottom:1rem;">
+            <span><i class="fa-solid fa-briefcase-medical"></i> ${d.experience_years} yrs</span>
+            <span><i class="fa-solid fa-rupee-sign"></i> ${fmt.currency(d.consultation_fee)}</span>
+            <span><i class="fa-solid fa-clock"></i> ${d.avg_consultation_minutes} min/patient</span>
+            <span><i class="fa-solid fa-people-waiting"></i> ${d.queue_count||0} in queue</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            ${d.is_available ? '<span class="badge badge-success">Available</span>' : '<span class="badge badge-danger">Unavailable</span>'}
+            <button class="btn btn-ghost btn-sm" onclick="deleteDoctor(${d.id},'${d.name}')" style="color:var(--danger)"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>
+      </div>`).join('');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function toggleAvail(id, val) {
+  try {
+    await apiFetch(`/api/doctors/${id}/availability`, { method:'PUT', body: JSON.stringify({ is_available: val }) });
+    showToast('Availability updated', 'success');
+    loadDoctors();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteDoctor(id, name) {
+  if (!confirm(`Remove Dr. ${name}?`)) return;
+  try {
+    await apiFetch(`/api/doctors/${id}`, { method: 'DELETE' });
+    showToast('Doctor removed', 'success');
+    loadDoctors();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function addDoctor() {
+  const btn = document.getElementById('addDocBtn');
+  setLoading(btn, true, 'Adding...');
+  try {
+    await apiFetch('/api/doctors', { method:'POST', body: JSON.stringify({
+      name: document.getElementById('dName').value.trim(),
+      specialization: document.getElementById('dSpec').value.trim(),
+      qualification: document.getElementById('dQual').value.trim(),
+      experience_years: parseInt(document.getElementById('dExp').value)||0,
+      consultation_fee: parseFloat(document.getElementById('dFee').value)||0,
+      avg_consultation_minutes: parseInt(document.getElementById('dAvgMin').value)||10
+    })});
+    closeModal('addDocModal');
+    showToast('Doctor added', 'success');
+    loadDoctors();
+  } catch(e) {
+    document.getElementById('addDocMsg').innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+  }
+  setLoading(btn, false);
+}
+
+function logout() { Auth.clearSession(); window.location.href = '../index.html'; }
+loadDoctors();
+</script>
+</body>
+</html>

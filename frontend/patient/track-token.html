@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Track Token - Smart Hospital</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  .page { max-width: 580px; margin: 0 auto; padding: 1.5rem 1.25rem 100px; }
+  .track-header { text-align: center; margin-bottom: 2rem; }
+  .tokens-display { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+  .token-box { background: white; border-radius: var(--radius-xl); padding: 2rem 1.5rem; text-align: center; border: 1px solid var(--border); box-shadow: var(--shadow); }
+  .token-box.current { border-color: var(--success); background: var(--success-bg); }
+  .token-box.mine { border-color: var(--primary); background: var(--primary-bg); }
+  .token-val { font-size: 3.5rem; font-weight: 800; line-height: 1; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .token-box.current .token-val { color: var(--success); }
+  .token-box.mine .token-val { color: var(--primary); }
+  .token-lbl { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-top: 0.5rem; }
+  .token-box.current .token-lbl { color: var(--success); }
+  .token-box.mine .token-lbl { color: var(--primary); }
+  .wait-card { background: white; border-radius: var(--radius-lg); padding: 1.5rem; border: 1px solid var(--border); box-shadow: var(--shadow-sm); margin-bottom: 1rem; }
+  .wait-timer { display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 2rem; font-weight: 800; color: var(--warning); margin: 0.5rem 0; }
+  .status-timeline { display: flex; gap: 0.5rem; align-items: center; margin: 1.5rem 0; }
+  .step { flex: 1; text-align: center; position: relative; }
+  .step::after { content: ''; position: absolute; top: 12px; left: 60%; width: 80%; height: 2px; background: var(--border); z-index: 0; }
+  .step:last-child::after { display: none; }
+  .step-dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); background: white; margin: 0 auto 0.3rem; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; position: relative; z-index: 1; }
+  .step.done .step-dot { background: var(--success); border-color: var(--success); color: white; }
+  .step.active .step-dot { background: var(--primary); border-color: var(--primary); color: white; animation: pulse-dot 1.5s infinite; }
+  .step label { font-size: 0.7rem; color: var(--text-muted); }
+  .step.done label, .step.active label { color: var(--text); font-weight: 600; }
+  .token-select { margin-bottom: 1.5rem; }
+  @keyframes pulse-dot { 0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,0.4);} 50%{box-shadow:0 0 0 6px rgba(37,99,235,0);} }
+</style>
+</head>
+<body>
+<div class="page fade-in">
+  <!-- Token Selector -->
+  <div class="track-header">
+    <h2><i class="fa-solid fa-ticket"></i> Token Tracker</h2>
+    <p class="text-muted">Live queue position updates</p>
+  </div>
+
+  <div class="token-select">
+    <label class="form-label">Select Token to Track</label>
+    <select class="form-control" id="tokenSelect" onchange="loadTrack()">
+      <option value="">Loading your tokens…</option>
+    </select>
+  </div>
+
+  <div id="trackArea" class="hidden">
+    <div class="tokens-display">
+      <div class="token-box current">
+        <div class="token-val" id="currentToken">-</div>
+        <div class="token-lbl">Now Serving</div>
+      </div>
+      <div class="token-box mine">
+        <div class="token-val" id="myToken">-</div>
+        <div class="token-lbl">Your Token</div>
+      </div>
+    </div>
+
+    <div class="wait-card text-center" id="waitCard">
+      <div class="text-muted text-small fw-600" style="text-transform:uppercase;letter-spacing:.05em;">Estimated Wait</div>
+      <div class="wait-timer"><i class="fa-solid fa-clock"></i><span id="waitTime">-</span></div>
+      <div class="text-muted text-small" id="aheadCount"></div>
+    </div>
+
+    <!-- Status -->
+    <div id="statusBadge" class="text-center mb-2"></div>
+
+    <!-- Timeline -->
+    <div class="status-timeline" id="timeline">
+      <div class="step done" id="step-booked"><div class="step-dot">✓</div><label>Booked</label></div>
+      <div class="step" id="step-waiting"><div class="step-dot">2</div><label>Waiting</label></div>
+      <div class="step" id="step-serving"><div class="step-dot">3</div><label>In Service</label></div>
+      <div class="step" id="step-done"><div class="step-dot">4</div><label>Done</label></div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <div class="text-muted text-small fw-600 mb-2" style="text-transform:uppercase;letter-spacing:.05em;">Doctor</div>
+        <div class="fw-700" id="trackDoctor">-</div>
+        <div class="text-muted text-small" id="trackHospital">-</div>
+      </div>
+    </div>
+
+    <div class="text-center mt-3">
+      <button class="btn btn-ghost btn-sm" onclick="loadTrack()"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+      <span class="text-muted text-small ml-1">Auto-refreshes every 30s</span>
+    </div>
+  </div>
+
+  <div id="noTokenMsg" class="text-center hidden" style="padding:3rem 0;">
+    <i class="fa-solid fa-ticket" style="font-size:3rem;color:var(--border);"></i>
+    <p class="mt-2 text-muted">No active tokens found.<br>
+    <a href="home.html" class="text-primary fw-600">Book one now →</a></p>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<nav style="position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--border);display:flex;z-index:50;">
+  <a href="home.html" style="flex:1;padding:.75rem;text-align:center;font-size:.72rem;font-weight:600;color:var(--text-muted);text-decoration:none;"><i class="fa-solid fa-house" style="display:block;font-size:1.2rem;margin-bottom:.2rem;"></i>Home</a>
+  <a href="profile.html" style="flex:1;padding:.75rem;text-align:center;font-size:.72rem;font-weight:600;color:var(--text-muted);text-decoration:none;"><i class="fa-solid fa-user" style="display:block;font-size:1.2rem;margin-bottom:.2rem;"></i>Profile</a>
+  <a href="track-token.html" style="flex:1;padding:.75rem;text-align:center;font-size:.72rem;font-weight:600;color:var(--primary);text-decoration:none;"><i class="fa-solid fa-ticket" style="display:block;font-size:1.2rem;margin-bottom:.2rem;"></i>My Tokens</a>
+  <a href="emergency.html" style="flex:1;padding:.75rem;text-align:center;font-size:.72rem;font-weight:600;color:var(--danger);text-decoration:none;"><i class="fa-solid fa-truck-medical" style="display:block;font-size:1.2rem;margin-bottom:.2rem;"></i>Emergency</a>
+</nav>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script>
+if (!Auth.requireRole('patient')) {}
+let tokens = [];
+let refreshInterval;
+
+async function loadTokens() {
+  try {
+    tokens = await apiFetch('/api/tokens/my');
+    const active = tokens.filter(t => ['pending','in_service'].includes(t.status));
+    const sel = document.getElementById('tokenSelect');
+    if (!active.length) {
+      sel.innerHTML = '<option>No active tokens</option>';
+      document.getElementById('noTokenMsg').classList.remove('hidden');
+      return;
+    }
+    sel.innerHTML = active.map(t =>
+      `<option value="${t.id}">Token #${t.token_number} - ${t.doctor_name} (${fmt.date(t.booking_date)})</option>`
+    ).join('');
+
+    // Check if came from booking
+    const tracked = sessionStorage.getItem('track_token');
+    if (tracked) {
+      const td = JSON.parse(tracked);
+      const opt = Array.from(sel.options).find(o => o.value == td.token_id);
+      if (opt) sel.value = td.token_id;
+      sessionStorage.removeItem('track_token');
+    }
+    loadTrack();
+  } catch(err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function loadTrack() {
+  clearInterval(refreshInterval);
+  const tokenId = document.getElementById('tokenSelect').value;
+  if (!tokenId || tokenId === 'No active tokens') return;
+
+  document.getElementById('trackArea').classList.remove('hidden');
+  document.getElementById('noTokenMsg').classList.add('hidden');
+
+  try {
+    const data = await apiFetch(`/api/tokens/live/${tokenId}`);
+    const prevCurrent = parseInt(document.getElementById('currentToken').textContent) || 0;
+
+    if (data.current_token !== prevCurrent) {
+      document.getElementById('currentToken').style.transform = 'scale(1.3)';
+      setTimeout(() => document.getElementById('currentToken').style.transform = 'scale(1)', 400);
+    }
+
+    document.getElementById('currentToken').textContent = data.current_token || '-';
+    document.getElementById('myToken').textContent = data.token_number;
+    document.getElementById('waitTime').textContent = fmt.wait(data.estimated_wait_minutes);
+    document.getElementById('aheadCount').textContent = data.tokens_ahead > 0
+      ? `${data.tokens_ahead} patient${data.tokens_ahead !== 1 ? 's' : ''} ahead of you`
+      : data.status === 'in_service' ? '🎉 It\'s your turn!' : 'You may be next!';
+    document.getElementById('trackDoctor').textContent = data.doctor_name;
+    document.getElementById('trackHospital').textContent = data.hospital_name;
+    document.getElementById('statusBadge').innerHTML = fmt.badge(data.status);
+
+    // Timeline
+    const steps = ['waiting','serving','done'];
+    document.getElementById('step-waiting').className = 'step done';
+    document.getElementById('step-serving').className = data.status === 'in_service' ? 'step active' : data.status === 'completed' ? 'step done' : 'step';
+    document.getElementById('step-done').className = data.status === 'completed' ? 'step done' : 'step';
+
+    if (data.status === 'completed') {
+      document.getElementById('waitCard').innerHTML = '<div class="text-success fw-700" style="font-size:1.2rem;padding:.5rem 0;">✅ Consultation Completed!</div>';
+    }
+  } catch(err) {
+    showToast(err.message, 'error');
+  }
+
+  refreshInterval = setInterval(loadTrack, 30000);
+}
+
+loadTokens();
+</script>
+</body>
+</html>

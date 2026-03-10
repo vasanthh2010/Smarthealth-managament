@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patient Signup - Smart Hospital</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  body { background: linear-gradient(135deg, #EFF6FF 0%, #F0FDF4 100%); min-height: 100vh; }
+  .signup-wrapper { max-width: 700px; margin: 0 auto; padding: 2rem 1.25rem; }
+  .signup-header { text-align: center; margin-bottom: 2rem; }
+  .signup-header .logo { font-weight: 800; font-size: 1.5rem; color: var(--primary); margin-bottom: 0.5rem; }
+  .signup-header h1 { font-size: 1.75rem; margin-bottom: 0.375rem; }
+  .signup-header p { color: var(--text-muted); font-size: 0.9rem; }
+  .signup-card { background: white; border-radius: var(--radius-xl); padding: 2.25rem; box-shadow: var(--shadow-lg); border: 1px solid var(--border); }
+  .section-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-weight: 700; margin-bottom: 1rem; margin-top: 1.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+  .section-title:first-child { margin-top: 0; }
+  .blood-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-top: 0.4rem; }
+  .blood-btn { padding: 0.5rem; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: white; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: var(--transition); text-align: center; }
+  .blood-btn.selected { border-color: var(--danger); background: var(--danger-bg); color: var(--danger); }
+  .blood-btn:hover:not(.selected) { border-color: var(--primary); background: var(--primary-bg); }
+  .login-link { text-align: center; margin-top: 1.25rem; color: var(--text-muted); font-size: 0.875rem; }
+  .login-link a { color: var(--primary); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="signup-wrapper">
+  <div class="signup-header">
+    <a href="../index.html" class="logo"><i class="fa-solid fa-hospital"></i> Smart Hospital</a>
+    <h1>Create Patient Account</h1>
+    <p>Your permanent healthcare profile — register once, access everywhere</p>
+  </div>
+
+  <div class="signup-card fade-in">
+    <div id="msg-area"></div>
+    <form id="signupForm" novalidate>
+      <!-- Personal Info -->
+      <div class="section-title"><i class="fa-solid fa-user"></i> Personal Information</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <div class="input-group"><i class="input-icon fa-solid fa-user"></i><input type="text" class="form-control" id="full_name" placeholder="Enter your full name" required></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date of Birth *</label>
+          <div class="input-group"><i class="input-icon fa-solid fa-calendar"></i><input type="date" class="form-control" id="date_of_birth" required></div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Age *</label>
+          <div class="input-group"><i class="input-icon fa-solid fa-hashtag"></i><input type="number" class="form-control" id="age" placeholder="Your age" min="0" max="150" required></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Gender *</label>
+          <select class="form-control" id="gender" required>
+            <option value="">Select gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Blood Group -->
+      <div class="form-group">
+        <label class="form-label">Blood Group *</label>
+        <div class="blood-grid" id="bloodGrid">
+          <button type="button" class="blood-btn" data-bg="A+">A+</button>
+          <button type="button" class="blood-btn" data-bg="A-">A-</button>
+          <button type="button" class="blood-btn" data-bg="B+">B+</button>
+          <button type="button" class="blood-btn" data-bg="B-">B-</button>
+          <button type="button" class="blood-btn" data-bg="AB+">AB+</button>
+          <button type="button" class="blood-btn" data-bg="AB-">AB-</button>
+          <button type="button" class="blood-btn" data-bg="O+">O+</button>
+          <button type="button" class="blood-btn" data-bg="O-">O-</button>
+        </div>
+        <input type="hidden" id="blood_group" required>
+      </div>
+
+      <!-- Contact -->
+      <div class="section-title"><i class="fa-solid fa-address-card"></i> Contact Information</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Email Address *</label>
+          <div class="input-group"><i class="input-icon fa-solid fa-envelope"></i><input type="email" class="form-control" id="email" placeholder="you@email.com" required></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number *</label>
+          <div class="input-group"><i class="input-icon fa-solid fa-phone"></i><input type="tel" class="form-control" id="phone" placeholder="10-digit mobile number" required></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Home Address *</label>
+        <textarea class="form-control" id="address" rows="2" placeholder="Door No, Street, City, State, Pincode" required style="resize:vertical;"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Emergency Contact (Optional)</label>
+        <div class="input-group"><i class="input-icon fa-solid fa-phone-volume"></i><input type="tel" class="form-control" id="emergency_contact" placeholder="Emergency contact number"></div>
+      </div>
+
+      <!-- Security -->
+      <div class="section-title"><i class="fa-solid fa-lock"></i> Create Password</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Password *</label>
+          <div class="input-group">
+            <i class="input-icon fa-solid fa-lock"></i>
+            <input type="password" class="form-control has-right-icon" id="password" placeholder="Min 8 characters" required>
+            <i class="input-icon-right fa-solid fa-eye" onclick="togglePwd('password',this)"></i>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm Password *</label>
+          <div class="input-group">
+            <i class="input-icon fa-solid fa-lock"></i>
+            <input type="password" class="form-control has-right-icon" id="confirm_password" placeholder="Re-enter password" required>
+            <i class="input-icon-right fa-solid fa-eye" onclick="togglePwd('confirm_password',this)"></i>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full btn-lg mt-2" id="submitBtn">
+        <i class="fa-solid fa-user-plus"></i> Create My Account
+      </button>
+    </form>
+  </div>
+
+  <div class="login-link">Already have an account? <a href="login.html">Sign in here</a></div>
+  <div style="text-align:center;margin-top:0.5rem;"><a href="../index.html" class="text-muted text-small">← Back to Home</a></div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="../js/api.js"></script>
+<script>
+// Blood group selection
+document.querySelectorAll('.blood-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.blood-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('blood_group').value = btn.dataset.bg;
+  });
+});
+
+// Toggle password visibility
+function togglePwd(id, icon) {
+  const input = document.getElementById(id);
+  if (input.type === 'password') { input.type = 'text'; icon.className = 'input-icon-right fa-solid fa-eye-slash'; }
+  else { input.type = 'password'; icon.className = 'input-icon-right fa-solid fa-eye'; }
+}
+
+// Auto-calculate age from DOB
+document.getElementById('date_of_birth').addEventListener('change', function() {
+  const dob = new Date(this.value);
+  const age = Math.floor((new Date() - dob) / (365.25 * 24 * 60 * 60 * 1000));
+  document.getElementById('age').value = age > 0 ? age : '';
+});
+
+document.getElementById('signupForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  clearError('msg-area');
+
+  const blood = document.getElementById('blood_group').value;
+  if (!blood) { showError('msg-area', 'Please select your blood group'); return; }
+
+  const pwd = document.getElementById('password').value;
+  const cpwd = document.getElementById('confirm_password').value;
+  if (pwd.length < 8) { showError('msg-area', 'Password must be at least 8 characters'); return; }
+  if (pwd !== cpwd) { showError('msg-area', 'Passwords do not match'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  setLoading(btn, true, 'Creating account...');
+
+  try {
+    const data = await apiFetch('/api/auth/patient/signup', {
+      method: 'POST',
+      body: JSON.stringify({
+        full_name: document.getElementById('full_name').value.trim(),
+        email: document.getElementById('email').value.trim().toLowerCase(),
+        phone: document.getElementById('phone').value.trim(),
+        password: pwd,
+        date_of_birth: document.getElementById('date_of_birth').value,
+        age: parseInt(document.getElementById('age').value),
+        blood_group: blood,
+        address: document.getElementById('address').value.trim(),
+        gender: document.getElementById('gender').value,
+        emergency_contact: document.getElementById('emergency_contact').value.trim()
+      })
+    });
+    Auth.setSession(data.token, { user_id: data.user_id, name: data.name, role: 'patient' });
+    showToast('Account created successfully! Welcome 🎉', 'success');
+    setTimeout(() => window.location.href = 'home.html', 1200);
+  } catch (err) {
+    showError('msg-area', err.message);
+    setLoading(btn, false);
+  }
+});
+</script>
+</body>
+</html>

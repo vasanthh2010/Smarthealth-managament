@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emergency - Smart Hospital</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  body { background: #1A0000; }
+  .emg-header { background: linear-gradient(135deg, #7F1D1D, #991B1B, #DC2626); padding: 2.5rem 1.25rem; text-align: center; }
+  .emg-icon { font-size: 3rem; margin-bottom: 0.75rem; animation: pulse-emergency 1.5s infinite; display: inline-block; }
+  .emg-title { font-size: 2rem; font-weight: 800; color: white; }
+  .emg-sub { color: rgba(255,255,255,0.75); margin-top: 0.3rem; }
+  .page { max-width: 540px; margin: 0 auto; padding: 1.5rem 1.25rem; }
+  .emg-action { background: white; border-radius: var(--radius-xl); padding: 1.5rem; margin-bottom: 1rem; border: 1px solid rgba(220,38,38,0.3); }
+  .call-btn { width: 100%; padding: 1.25rem; background: var(--danger); color: white; border-radius: var(--radius-lg); font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.75rem; cursor: pointer; transition: var(--transition); border: none; }
+  .call-btn:hover { background: #B91C1C; transform: scale(1.02); }
+  .hospital-emg-card { background: rgba(255,255,255,0.07); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 0.75rem; border: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: var(--transition); }
+  .hospital-emg-card:hover { background: rgba(255,255,255,0.12); }
+  .hosp-emg-info h4 { color: white; font-size: 1rem; margin-bottom: 0.25rem; }
+  .hosp-emg-info p { color: rgba(255,255,255,0.6); font-size: 0.82rem; }
+  .beds-avail { background: rgba(22,163,74,0.2); color: #4ADE80; padding: 0.35rem 0.75rem; border-radius: var(--radius-full); font-size: 0.78rem; font-weight: 700; }
+  .section-lbl { color: rgba(255,255,255,0.5); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-bottom: 0.875rem; margin-top: 1.75rem; }
+  #ambulanceForm { display: none; }
+  #ambulanceForm.show { display: block; }
+  .dark-input { background: rgba(255,255,255,0.08) !important; border-color: rgba(255,255,255,0.2) !important; color: white !important; }
+  .dark-input::placeholder { color: rgba(255,255,255,0.4) !important; }
+  .dark-label { color: rgba(255,255,255,0.85) !important; }
+</style>
+</head>
+<body>
+<div class="emg-header">
+  <div class="emg-icon">🚨</div>
+  <h1 class="emg-title">EMERGENCY</h1>
+  <p class="emg-sub">Immediate medical assistance</p>
+</div>
+
+<div class="page">
+  <!-- Call 108 -->
+  <div class="emg-action">
+    <div style="margin-bottom:0.75rem;font-weight:700;color:var(--danger);">🆘 National Ambulance Helpline</div>
+    <a href="tel:108" class="call-btn"><i class="fa-solid fa-phone"></i> Call 108 — Free Ambulance</a>
+    <a href="tel:102" class="call-btn mt-2" style="background:#991B1B;margin-top:.5rem;"><i class="fa-solid fa-phone"></i> Call 102 — Maternal Emergency</a>
+  </div>
+
+  <!-- Book via Platform -->
+  <div class="section-lbl">Book Ambulance via Platform</div>
+  <button class="btn btn-full" id="bookAmbBtn"
+    style="background:rgba(220,38,38,0.15);color:#FCA5A5;border:1.5px solid rgba(220,38,38,0.4);border-radius:var(--radius-lg);padding:1rem;font-size:0.95rem;font-weight:600;margin-bottom:1rem;"
+    onclick="toggleForm()">
+    <i class="fa-solid fa-truck-medical"></i> Book Ambulance — Complete Form
+  </button>
+
+  <div id="ambulanceForm">
+    <div id="amb-msg"></div>
+    <form id="ambForm">
+      <div class="form-group">
+        <label class="form-label dark-label">Patient Name *</label>
+        <input type="text" class="form-control dark-input" id="pName" placeholder="Patient's name" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label dark-label">Patient Phone *</label>
+          <input type="tel" class="form-control dark-input" id="pPhone" placeholder="Contact number" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label dark-label">Emergency Type</label>
+          <select class="form-control dark-input" id="eType" style="background:rgba(255,255,255,0.08);color:white;">
+            <option value="General" style="color:#111">General</option>
+            <option value="Cardiac" style="color:#111">Cardiac</option>
+            <option value="Accident" style="color:#111">Accident</option>
+            <option value="Respiratory" style="color:#111">Respiratory</option>
+            <option value="Maternal" style="color:#111">Maternal</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label dark-label">Pickup Address *</label>
+        <textarea class="form-control dark-input" id="pickupAddr" rows="2" placeholder="Current location / pickup address" required style="resize:vertical;"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label dark-label">Additional Notes</label>
+        <input type="text" class="form-control dark-input" id="notes" placeholder="Any special instructions...">
+      </div>
+      <button type="submit" class="btn btn-danger btn-full btn-lg" id="ambSubmit">
+        <i class="fa-solid fa-truck-medical"></i> Dispatch Ambulance Now
+      </button>
+    </form>
+  </div>
+
+  <!-- Nearest Hospitals -->
+  <div class="section-lbl">Nearest Hospitals with Available Beds</div>
+  <div id="nearestHospitals">
+    <div style="text-align:center;color:rgba(255,255,255,0.4);padding:1.5rem;"><div class="spinner" style="border-color:rgba(255,255,255,0.2);border-top-color:white;"></div></div>
+  </div>
+
+  <div style="height:1rem;"></div>
+  <div class="text-center"><a href="home.html" style="color:rgba(255,255,255,0.5);font-size:0.85rem;">← Back to Home</a></div>
+</div>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script>
+if (!Auth.requireRole('patient')) {}
+const user = Auth.getUser();
+
+// Pre-fill name/phone if available
+async function prefillUser() {
+  try {
+    const profile = await apiFetch('/api/auth/me');
+    if (profile) { document.getElementById('pName').value = profile.full_name || ''; document.getElementById('pPhone').value = profile.phone || ''; }
+  } catch(e) {}
+}
+prefillUser();
+
+function toggleForm() {
+  const form = document.getElementById('ambulanceForm');
+  form.classList.toggle('show');
+  document.getElementById('bookAmbBtn').innerHTML = form.classList.contains('show')
+    ? '<i class="fa-solid fa-chevron-up"></i> Hide Form'
+    : '<i class="fa-solid fa-truck-medical"></i> Book Ambulance — Complete Form';
+}
+
+// Load nearest hospitals
+async function loadNearest() {
+  try {
+    const hospitals = await apiFetch('/api/ambulance/nearest');
+    if (!hospitals.length) {
+      document.getElementById('nearestHospitals').innerHTML = '<div style="color:rgba(255,255,255,0.5);text-align:center;font-size:.875rem;">No hospitals with available beds found nearby.</div>';
+      return;
+    }
+    document.getElementById('nearestHospitals').innerHTML = hospitals.map(h => `
+      <div class="hospital-emg-card" onclick="callHospital('${h.phone}')">
+        <div class="hosp-emg-info">
+          <h4>${h.name}</h4>
+          <p><i class="fa-solid fa-location-dot"></i> ${h.address || h.city}</p>
+          <p style="margin-top:.25rem;"><i class="fa-solid fa-phone"></i> ${h.phone}</p>
+        </div>
+        <div class="beds-avail">🛏 ${h.available_beds} free</div>
+      </div>`).join('');
+  } catch(err) {
+    document.getElementById('nearestHospitals').innerHTML = '<div style="color:rgba(255,255,255,0.5);text-align:center;font-size:.875rem;">Could not load hospitals.</div>';
+  }
+}
+
+function callHospital(phone) {
+  window.location.href = `tel:${phone}`;
+}
+
+document.getElementById('ambForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('ambSubmit');
+  setLoading(btn, true, 'Dispatching...');
+  try {
+    const data = await apiFetch('/api/ambulance/request', {
+      method: 'POST',
+      body: JSON.stringify({
+        patient_name: document.getElementById('pName').value.trim(),
+        patient_phone: document.getElementById('pPhone').value.trim(),
+        pickup_address: document.getElementById('pickupAddr').value.trim(),
+        emergency_type: document.getElementById('eType').value,
+        notes: document.getElementById('notes').value.trim()
+      })
+    });
+    document.getElementById('amb-msg').innerHTML = `
+      <div class="alert alert-success">
+        🚑 Ambulance requested! 
+        ${data.assigned_hospital ? `Assigned to <b>${data.assigned_hospital.name}</b>. Call: <a href="tel:${data.assigned_hospital.phone}" style="color:var(--success)">${data.assigned_hospital.phone}</a>` : ''}
+      </div>`;
+    setLoading(btn, false);
+  } catch(err) {
+    document.getElementById('amb-msg').innerHTML = `<div class="alert alert-error">⚠️ ${err.message}</div>`;
+    setLoading(btn, false);
+  }
+});
+
+loadNearest();
+</script>
+</body>
+</html>
