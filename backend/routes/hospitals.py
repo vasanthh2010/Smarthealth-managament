@@ -120,6 +120,40 @@ def get_my_hospital(current_user):
     hospital['today_tokens'] = today_tokens
     return jsonify(hospital), 200
 
+@hospitals_bp.route('/api/hospitals/my', methods=['PUT'])
+@require_role('hospital_admin')
+def update_my_hospital(current_user):
+    hospital_id = current_user['hospital_id']
+    data = request.get_json()
+
+    fields = ['name', 'address', 'city', 'state', 'pincode', 'phone', 'email', 'description', 'location_lat', 'location_lng']
+    updates = []
+    params = []
+
+    for field in fields:
+        if field in data:
+            updates.append(f"{field}=%s")
+            params.append(data[field])
+
+    if not updates:
+        return jsonify({'error': 'No fields provided for update'}), 400
+
+    sql = f"UPDATE hospitals SET {', '.join(updates)} WHERE id=%s"
+    params.append(hospital_id)
+
+    query_db(sql, params, commit=True)
+
+    # Get updated hospital for broadcasting
+    updated_hosp = query_db('SELECT * FROM hospitals WHERE id=%s', (hospital_id,), one=True)
+    updated_hosp.pop('password_hash', None)
+    updated_hosp.pop('login_id', None)
+
+    # Emit WebSocket event
+    from app import socketio
+    socketio.emit('hospital_update', updated_hosp)
+
+    return jsonify({'message': 'Profile updated successfully', 'hospital': updated_hosp}), 200
+
 @hospitals_bp.route('/api/hospitals/my/stats', methods=['GET'])
 @require_role('hospital_admin')
 def get_hospital_stats(current_user):

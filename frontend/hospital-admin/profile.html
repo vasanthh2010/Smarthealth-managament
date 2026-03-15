@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hospital Profile - Smart Hospital</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  .profile-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; }
+  @media (max-width: 768px) { .profile-grid { grid-template-columns: 1fr; } }
+  .profile-image-card { text-align: center; padding: 2rem; }
+  .hospital-large-icon { width: 100px; height: 100px; background: var(--primary-bg); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3rem; margin: 0 auto 1.5rem; }
+  .form-group { margin-bottom: 1.25rem; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+</style>
+</head>
+<body>
+<div class="dashboard-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="brand"><i class="fa-solid fa-hospital-user"></i> <span>Hospital</span> Admin</div>
+      <div style="font-size:.75rem;color:rgba(255,255,255,.4);margin-top:.25rem;" id="sideHospitalName">Loading…</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Management</div>
+      <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+      <a href="profile.html" class="nav-item active"><i class="fa-solid fa-building"></i> Profile</a>
+      <a href="beds.html" class="nav-item"><i class="fa-solid fa-bed"></i> Bed Management</a>
+      <a href="queue.html" class="nav-item"><i class="fa-solid fa-people-waiting"></i> Patient Queue</a>
+      <a href="doctors.html" class="nav-item"><i class="fa-solid fa-user-doctor"></i> Doctors</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn btn-ghost btn-sm w-full" onclick="logout()" style="color:rgba(255,255,255,.6);justify-content:flex-start;">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+      </button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h3>Hospital Profile</h3>
+        <p class="text-muted text-small">Manage your hospital's public details and location</p>
+      </div>
+      <div>
+        <button class="btn btn-primary" onclick="saveProfile()" id="saveBtn"><i class="fa-solid fa-save"></i> Save Changes</button>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div id="msg-area"></div>
+      
+      <div class="profile-grid">
+        <div class="card profile-image-card">
+          <div class="hospital-large-icon"><i class="fa-solid fa-hospital"></i></div>
+          <h4 id="dispName">Hospital Name</h4>
+          <p class="text-muted text-small" id="dispLoginId">HOSP000</p>
+          <div class="badge badge-success mt-1">Approved</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h4>Detailed Information</h4></div>
+          <form id="profileForm" onsubmit="event.preventDefault()">
+            <div class="form-group">
+              <label>Hospital Name</label>
+              <input type="text" name="name" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>Address</label>
+              <textarea name="address" class="form-control" rows="2" required></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>City</label>
+                <input type="text" name="city" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label>State</label>
+                <input type="text" name="state" class="form-control" required>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Pincode</label>
+                <input type="text" name="pincode" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label>Phone Number</label>
+                <input type="tel" name="phone" class="form-control" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Email Address</label>
+              <input type="email" name="email" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea name="description" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="form-header mt-2"><h5>Map Location (Coordinates)</h5></div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Latitude</label>
+                <input type="number" step="any" name="location_lat" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Longitude</label>
+                <input type="number" step="any" name="location_lng" class="form-control">
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script>
+if (!Auth.requireRole('hospital_admin')) return;
+
+async function loadProfile() {
+  try {
+    const hosp = await apiFetch('/api/hospitals/my');
+    document.getElementById('sideHospitalName').textContent = hosp.name;
+    document.getElementById('dispName').textContent = hosp.name;
+    document.getElementById('dispLoginId').textContent = hosp.login_id;
+    
+    const form = document.getElementById('profileForm');
+    const fields = ['name', 'address', 'city', 'state', 'pincode', 'phone', 'email', 'description', 'location_lat', 'location_lng'];
+    fields.forEach(f => {
+      if (form.elements[f]) form.elements[f].value = hosp[f] || '';
+    });
+  } catch (err) {
+    showError('msg-area', err.message);
+  }
+}
+
+async function saveProfile() {
+  const btn = document.getElementById('saveBtn');
+  setLoading(btn, true, 'Saving...');
+  
+  const form = document.getElementById('profileForm');
+  const data = {};
+  new FormData(form).forEach((val, key) => {
+    if (key === 'location_lat' || key === 'location_lng') {
+      data[key] = val ? parseFloat(val) : null;
+    } else {
+      data[key] = val;
+    }
+  });
+
+  try {
+    const res = await apiFetch('/api/hospitals/my', {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+    showToast('Profile updated successfully', 'success');
+    
+    // Update sidebar and heading
+    document.getElementById('sideHospitalName').textContent = data.name;
+    document.getElementById('dispName').textContent = data.name;
+    
+    // Update session user name if changed
+    const user = Auth.getUser();
+    if (user && user.name !== data.name) {
+      user.name = data.name;
+      localStorage.setItem('sh_user', JSON.stringify(user));
+    }
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+function logout() { Auth.clearSession(); window.location.href = '../index.html'; }
+
+loadProfile();
+</script>
+</body>
+</html>

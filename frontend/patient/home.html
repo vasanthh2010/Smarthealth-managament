@@ -72,6 +72,7 @@
   <!-- Filters -->
   <div class="filter-chips">
     <span class="chip active" onclick="filterChip(this,'all')">All Hospitals</span>
+    <span class="chip" onclick="filterChip(this,'nearby')"><i class="fa-solid fa-location-crosshairs"></i> Nearby</span>
     <span class="chip" onclick="filterChip(this,'beds')"><i class="fa-solid fa-bed"></i> Beds Available</span>
     <span class="chip" onclick="filterChip(this,'doctors')"><i class="fa-solid fa-user-doctor"></i> Doctors Available</span>
   </div>
@@ -102,10 +103,11 @@
 </nav>
 
 <div id="toast-container"></div>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="../js/api.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-if (!Auth.requireRole('patient')) {}
+if (!Auth.requireRole('patient')) return;
 
 const user = Auth.getUser();
 document.getElementById('userAvatar').textContent = (user?.name || 'P')[0].toUpperCase();
@@ -135,6 +137,14 @@ function renderHospitals() {
   if (activeFilter === 'beds') list = list.filter(h => h.available_beds > 0);
   if (activeFilter === 'doctors') list = list.filter(h => h.doctor_count > 0);
 
+  if (activeFilter === 'nearby') {
+    if (userCoords) {
+      // Strict 50km filter
+      list = list.filter(h => h._dist !== null && h._dist <= 50000);
+      list.sort((a, b) => (a._dist || 999999) - (b._dist || 999999));
+    }
+  }
+
   document.getElementById('countLabel').textContent = `${list.length} hospital${list.length !== 1 ? 's' : ''}`;
 
   if (!list.length) {
@@ -147,7 +157,7 @@ function renderHospitals() {
       <div class="hospital-icon"><i class="fa-solid fa-hospital-alt"></i></div>
       <div class="hospital-info">
         <div class="hospital-name">${h.name}</div>
-        <div class="hospital-addr"><i class="fa-solid fa-location-dot"></i> ${h.address}, ${h.city}</div>
+        <div class="hospital-addr"><i class="fa-solid fa-location-dot"></i> ${h.address}, ${h.city} ${h._dist ? ` · <span class="text-primary fw-600">${fmt.distance(h._dist)}</span>` : ''}</div>
         <div class="hospital-meta">
           <span class="meta-tag"><i class="fa-solid fa-user-doctor"></i> ${h.doctor_count} doctors</span>
           <span class="meta-tag"><i class="fa-solid fa-bed"></i> ${h.available_beds}/${h.total_bed_count} beds</span>
@@ -170,6 +180,18 @@ function renderMap() {
       attribution: '© OpenStreetMap'
     }).addTo(map);
   }
+  // Clear existing markers
+  map.eachLayer(layer => { if (layer instanceof L.Marker) map.removeLayer(layer); });
+
+  if (userCoords) {
+    L.marker([userCoords.lat, userCoords.lng], {
+      icon: L.divIcon({
+        html: `<div style="background:var(--primary);width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 0 10px var(--primary);"></div>`,
+        iconSize: [16, 16], className: ''
+      })
+    }).addTo(map).bindPopup('You are here');
+  }
+
   const withCoords = allHospitals.filter(h => h.location_lat && h.location_lng);
   if (withCoords.length) {
     withCoords.forEach(h => {
@@ -208,7 +230,65 @@ document.getElementById('searchInput').addEventListener('input', function() {
   searchTimer = setTimeout(() => loadHospitals(this.value), 350);
 });
 
-loadHospitals();
+let userCoords = null;
+async function initLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      updateDistances();
+      renderHospitals();
+      renderMap();
+    }, err => console.warn("Location access denied"));
+  }
+}
+
+function updateDistances() {
+  if (!userCoords) return;
+  allHospitals.forEach(h => {
+    if (h.location_lat && h.location_lng) {
+      h._dist = utils.calculateDistance(userCoords.lat, userCoords.lng, h.location_lat, h.location_lng);
+    }
+  });
+}
+
+// Initialize WebSocket for global updates
+function initWS() {
+  if (typeof io !== 'undefined') {
+    const socket = io(window.location.origin);
+    socket.on('hospital_update', (updatedHosp) => {
+      const idx = allHospitals.findIndex(h => h.id === updatedHosp.id);
+      if (idx !== -1) {
+        // Preserve local _dist if exists
+        const oldDist = allHospitals[idx]._dist;
+        allHospitals[idx] = { ...allHospitals[idx], ...updatedHosp, _dist: oldDist };
+        renderHospitals();
+        renderMap();
+      } else if (updatedHosp.status === 'approved') {
+        allHospitals.push(updatedHosp);
+        updateDistances();
+        renderHospitals();
+        renderMap();
+      }
+    });
+
+    // Also listen for bed/token updates globally if we want true real-time on home page
+    socket.on('bed_update', (data) => {
+       const h = allHospitals.find(h => h.id === data.hospital_id);
+       if (h) {
+         if (data.status === 'available') h.available_beds++;
+         else h.available_beds--;
+         renderHospitals();
+       }
+    });
+  }
+}
+
+async function start() {
+  await loadHospitals();
+  initLocation();
+  initWS();
+}
+start();
 </script>
 </body>
 </html>

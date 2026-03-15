@@ -104,7 +104,7 @@
 <div id="toast-container"></div>
 <script src="../js/api.js"></script>
 <script>
-if (!Auth.requireRole('super_admin')) {}
+if (!Auth.requireRole('super_admin')) return;
 document.getElementById('adminName').textContent = Auth.getUser()?.name || '';
 
 let currentRegId = null;

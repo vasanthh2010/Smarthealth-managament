@@ -58,26 +58,32 @@
 <div id="toast-container"></div>
 <script src="../js/api.js"></script>
 <script>
-if (!Auth.requireRole('patient')) {}
+if (!Auth.requireRole('patient')) return;
 const u = Auth.getUser();
 document.getElementById('pAvatar').textContent = (u?.name||'?')[0].toUpperCase();
 document.getElementById('pName').textContent = u?.name || 'Patient';
 
 async function loadProfile() {
   try {
-    // Load token history
-    const tokens = await apiFetch('/api/tokens/my');
-    const user = Auth.getUser();
-    document.getElementById('pEmail').textContent = user?.email || '';
+    // 1. Load full profile info
+    const me = await apiFetch('/api/auth/me');
+    document.getElementById('pEmail').textContent = me.email;
+    document.getElementById('pBlood').innerHTML = me.blood_group ? `<div class="blood-chip"><i class="fa-solid fa-droplet text-danger"></i> ${me.blood_group}</div>` : '';
 
     document.getElementById('profileDetails').innerHTML = `
-      <div class="form-row">
-        <div><div class="text-muted text-small">Full Name</div><div class="fw-600 mt-1">${u?.name || '-'}</div></div>
-        <div><div class="text-muted text-small">Role</div><div class="fw-600 mt-1">Patient</div></div>
+      <div class="profile-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem 1rem;">
+        <div><div class="text-muted text-small">Full Name</div><div class="fw-600 mt-1">${me.full_name}</div></div>
+        <div><div class="text-muted text-small">Phone</div><div class="fw-600 mt-1">${me.phone}</div></div>
+        <div><div class="text-muted text-small">Email</div><div class="fw-600 mt-1">${me.email}</div></div>
+        <div><div class="text-muted text-small">Blood Group</div><div class="fw-600 mt-1">${me.blood_group || '-'}</div></div>
+        <div><div class="text-muted text-small">Age / Gender</div><div class="fw-600 mt-1">${me.age} years / ${fmt.capitalize(me.gender)}</div></div>
+        <div><div class="text-muted text-small">Date of Birth</div><div class="fw-600 mt-1">${fmt.date(me.date_of_birth)}</div></div>
+        <div style="grid-column: span 2;"><div class="text-muted text-small">Address</div><div class="fw-600 mt-1">${me.address}</div></div>
       </div>
-      <p class="text-small text-muted mt-2">Update your personal details by contacting support.</p>
     `;
 
+    // 2. Load token history
+    const tokens = await apiFetch('/api/tokens/my');
     if (!tokens.length) {
       document.getElementById('tokenHistory').innerHTML = '<div class="text-center text-muted" style="padding:1rem;">No tokens yet. <a href="home.html" class="text-primary fw-600">Book now →</a></div>';
       return;
