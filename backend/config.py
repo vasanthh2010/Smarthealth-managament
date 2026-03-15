@@ -18,6 +18,6 @@ class Config:
     # App
     SECRET_KEY = os.getenv('SECRET_KEY', 'flask_secret_key_2024')
     DEBUG = os.getenv('DEBUG', 'True') == 'True'
-    PORT = int(os.getenv('PORT', 5000))
+    PORT = int(os.getenv('PORT', 5001))
 
 

@@ -184,3 +184,17 @@ INSERT OR IGNORE INTO beds (hospital_id, bed_number, ward_type, status) VALUES
     (1, 'EMR-01', 'Emergency', 'available'), (1, 'EMR-02', 'Emergency', 'available'), (1, 'EMR-03', 'Emergency', 'occupied'), (1, 'EMR-04', 'Emergency', 'available'), (1, 'EMR-05', 'Emergency', 'available'),
     (1, 'PED-01', 'Pediatric', 'occupied'), (1, 'PED-02', 'Pediatric', 'available'), (1, 'PED-03', 'Pediatric', 'available'), (1, 'PED-04', 'Pediatric', 'available'), (1, 'PED-05', 'Pediatric', 'available'),
     (1, 'MAT-01', 'Maternity', 'available'), (1, 'MAT-02', 'Maternity', 'occupied'), (1, 'MAT-03', 'Maternity', 'available'), (1, 'MAT-04', 'Maternity', 'available'), (1, 'MAT-05', 'Maternity', 'available');
+
+-- ─── PERFORMANCE INDEXES ──────────────────────────────────────────────────────
+-- These speed up the dashboard stats query and common filters significantly
+CREATE INDEX IF NOT EXISTS idx_hospitals_status ON hospitals(status);
+CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
+CREATE INDEX IF NOT EXISTS idx_beds_status ON beds(status);
+CREATE INDEX IF NOT EXISTS idx_beds_hospital ON beds(hospital_id);
+CREATE INDEX IF NOT EXISTS idx_tokens_booking_date ON tokens(booking_date);
+CREATE INDEX IF NOT EXISTS idx_tokens_hospital ON tokens(hospital_id);
+CREATE INDEX IF NOT EXISTS idx_tokens_status ON tokens(status);
+CREATE INDEX IF NOT EXISTS idx_ambulance_created ON ambulance_requests(created_at);
+CREATE INDEX IF NOT EXISTS idx_registrations_status ON hospital_registrations(status);
+CREATE INDEX IF NOT EXISTS idx_doctors_hospital ON doctors(hospital_id);
+

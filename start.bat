@@ -15,7 +15,7 @@ if errorlevel 1 (
 REM Install Python packages
 echo [1/3] Installing Python packages...
 cd backend
-pip install -r requirements.txt >nul 2>&1
+pip install -r requirements.txt
 
 REM Setup SQLite DB
 echo.
@@ -24,8 +24,8 @@ python init_db.py
 
 REM Start Flask
 echo.
-echo [3/3] Starting Flask backend on http://localhost:5000 ...
-echo [4/4] Open your browser and go to: http://localhost:5000
+echo [3/3] Starting Flask backend on http://localhost:5001 ...
+echo [4/4] Open your browser and go to: http://localhost:5001
 echo.
 echo ================================================
 echo   DEMO CREDENTIALS:
@@ -35,3 +35,6 @@ echo   Patient:      Register at signup page
 echo ================================================
 echo.
 python app.py
+echo.
+echo [ERROR] The server has stopped. Check the messages above.
+pause
