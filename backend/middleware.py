@@ -33,7 +33,7 @@ def require_role(*roles):
             if err:
                 return jsonify({'error': err}), 401
             if user.get('role') not in roles:
-                return jsonify({'error': 'Access denied'}), 403
+                return jsonify({'error': f'Access denied. Role {user.get("role")} does not have permission for this action.'}), 403
             return f(*args, current_user=user, **kwargs)
         return decorated
     return decorator

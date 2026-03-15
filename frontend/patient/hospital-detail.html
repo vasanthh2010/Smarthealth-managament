@@ -38,6 +38,22 @@
   .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
   .tab-content { display: none; }
   .tab-content.active { display: block; }
+  
+  /* Detailed Bed Styles */
+  .ward-title { font-size: 0.9rem; font-weight: 700; color: var(--text); border-left: 3px solid var(--primary); padding-left: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+  .patient-bed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 0.75rem; }
+  .p-bed-card { background: white; border-radius: var(--radius); padding: 1rem 0.75rem; text-align: center; border: 1px solid var(--border); transition: var(--transition); position: relative; overflow: hidden; }
+  .p-bed-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; }
+  .p-bed-card.available { border-color: var(--success); background: var(--success-bg); }
+  .p-bed-card.available::before { background: var(--success); }
+  .p-bed-card.available .p-bed-icon { color: var(--success); }
+  .p-bed-card.occupied { border-color: var(--danger); background: var(--danger-bg); opacity: 0.85; }
+  .p-bed-card.occupied::before { background: var(--danger); }
+  .p-bed-card.occupied .p-bed-icon { color: var(--danger); opacity: 0.6; }
+  .p-bed-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+  .p-bed-icon { font-size: 1.25rem; margin-bottom: 0.4rem; }
+  .p-bed-num { font-weight: 700; font-size: 0.9rem; color: var(--text); }
+  .p-bed-status { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin-top: 0.2rem; }
 </style>
 </head>
 <body>
@@ -140,24 +156,36 @@ async function loadHospital() {
         </div>`).join('');
     }
 
-    // Beds
-    if (!bedSummary.length) {
-      document.getElementById('bedSummary').innerHTML = '<div class="alert alert-info">No bed data available.</div>';
-    } else {
-      document.getElementById('bedSummary').innerHTML = bedSummary.map(b => {
-        const pct = b.total > 0 ? Math.round((b.available / b.total) * 100) : 0;
-        return `<div class="bed-summary-card">
-          <div class="ward">${b.ward_type}</div>
-          <div class="bed-bar">
-            <div class="avail" style="width:${pct}%"></div>
-            <div class="occ" style="flex:1"></div>
+    // Detailed Beds
+    try {
+      const allBeds = await apiFetch(`/api/beds/${hospitalId}`);
+      if (!allBeds.length) {
+        document.getElementById('bedSummary').innerHTML = '<div class="alert alert-info">No bed data available.</div>';
+      } else {
+        const wards = {};
+        allBeds.forEach(b => {
+          if (!wards[b.ward_type]) wards[b.ward_type] = [];
+          wards[b.ward_type].push(b);
+        });
+
+        document.getElementById('bedSummary').className = 'bed-detailed-view';
+        document.getElementById('bedSummary').innerHTML = Object.keys(wards).map(wardName => `
+          <div class="ward-section mb-3">
+            <h5 class="ward-title mb-2"><i class="fa-solid fa-layer-group"></i> ${wardName} Ward</h5>
+            <div class="patient-bed-grid">
+              ${wards[wardName].map(b => `
+                <div class="p-bed-card ${b.status}">
+                  <div class="p-bed-icon"><i class="fa-solid fa-bed"></i></div>
+                  <div class="p-bed-num">${b.bed_number}</div>
+                  <div class="p-bed-status">${b.status === 'available' ? 'Available' : 'Occupied'}</div>
+                </div>
+              `).join('')}
+            </div>
           </div>
-          <div class="bed-count">
-            <span class="text-success">${b.available} free</span>
-            <span class="text-danger">${b.occupied} occ</span>
-          </div>
-        </div>`;
-      }).join('');
+        `).join('');
+      }
+    } catch(e) {
+      document.getElementById('bedSummary').innerHTML = '<div class="alert alert-error">Failed to load bed details.</div>';
     }
 
     // Info

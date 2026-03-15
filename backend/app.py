@@ -8,7 +8,7 @@ from config import Config
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
 app.secret_key = Config.SECRET_KEY
 
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={r"/api/*": {"origins": "*", "allow_headers": ["Content-Type", "Authorization"]}})
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 # ─── REGISTER BLUEPRINTS ──────────────────────────────────────────────────────────

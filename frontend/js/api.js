@@ -3,9 +3,7 @@
    Base URL auto-detects: localhost:5000
 ────────────────────────────────────────────────────────────── */
 
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:5000'
-  : window.location.origin;
+const API_BASE = window.location.origin;
 
 /* ─── TOKEN MANAGEMENT ───────────────────────────────────────── */
 const Auth = {
@@ -24,7 +22,7 @@ const Auth = {
     const user = Auth.getUser();
     if (!user || user.role !== role) {
       Auth.clearSession();
-      window.location.href = '/frontend/index.html';
+      window.location.href = '/index.html';
       return false;
     }
     return true;

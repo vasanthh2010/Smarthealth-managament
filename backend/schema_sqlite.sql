@@ -168,21 +168,19 @@ VALUES
     (2, 1, 'Dr. Rajesh Kumar', 'General Medicine', 'MBBS, MD', 10, 400.00, 10),
     (3, 1, 'Dr. Priya Nair', 'Pediatrics', 'MBBS, DCH', 8, 500.00, 10),
     (4, 1, 'Dr. Mohammed Ali', 'Orthopedics', 'MBBS, MS (Ortho)', 12, 700.00, 20),
-    (5, 1, 'Dr. Sunita Patel', 'Gynecology', 'MBBS, MS (OBG)', 14, 600.00, 15);
+    (5, 1, 'Dr. Sunita Patel', 'Gynecology', 'MBBS, MS (OBG)', 14, 600.00, 15),
+    (6, 1, 'Dr. Vijay K', 'Neurology', 'MBBS, DM', 12, 1000.00, 20),
+    (7, 1, 'Dr. Lakshmi R', 'Dermatology', 'MBBS, MD', 7, 500.00, 15),
+    (8, 1, 'Dr. Arun Singh', 'ENT', 'MBBS, MS', 9, 450.00, 10),
+    (9, 1, 'Dr. Meera J', 'Psychiatry', 'MBBS, MD', 11, 750.00, 15),
+    (10, 1, 'Dr. Sanjay G', 'Urology', 'MBBS, MCh', 13, 900.00, 20);
 
--- Sample Beds
-INSERT OR IGNORE INTO beds (id, hospital_id, bed_number, ward_type, status) VALUES
-    (1, 1, 'ICU-01', 'ICU', 'occupied'),
-    (2, 1, 'ICU-02', 'ICU', 'available'),
-    (3, 1, 'ICU-03', 'ICU', 'occupied'),
-    (4, 1, 'GEN-01', 'General', 'available'),
-    (5, 1, 'GEN-02', 'General', 'available'),
-    (6, 1, 'GEN-03', 'General', 'occupied'),
-    (7, 1, 'GEN-04', 'General', 'available'),
-    (8, 1, 'GEN-05', 'General', 'occupied'),
-    (9, 1, 'EMR-01', 'Emergency', 'available'),
-    (10, 1, 'EMR-02', 'Emergency', 'available'),
-    (11, 1, 'PED-01', 'Pediatric', 'occupied'),
-    (12, 1, 'PED-02', 'Pediatric', 'available'),
-    (13, 1, 'MAT-01', 'Maternity', 'available'),
-    (14, 1, 'MAT-02', 'Maternity', 'occupied');
+-- Sample Beds (Increased count)
+INSERT OR IGNORE INTO beds (hospital_id, bed_number, ward_type, status) VALUES
+    (1, 'ICU-01', 'ICU', 'occupied'), (1, 'ICU-02', 'ICU', 'available'), (1, 'ICU-03', 'ICU', 'occupied'), (1, 'ICU-04', 'ICU', 'available'), (1, 'ICU-05', 'ICU', 'available'),
+    (1, 'GEN-01', 'General', 'available'), (1, 'GEN-02', 'General', 'available'), (1, 'GEN-03', 'General', 'occupied'), (1, 'GEN-04', 'General', 'available'), (1, 'GEN-05', 'General', 'occupied'),
+    (1, 'GEN-06', 'General', 'available'), (1, 'GEN-07', 'General', 'available'), (1, 'GEN-08', 'General', 'available'), (1, 'GEN-09', 'General', 'occupied'), (1, 'GEN-10', 'General', 'available'),
+    (1, 'GEN-11', 'General', 'available'), (1, 'GEN-12', 'General', 'available'), (1, 'GEN-13', 'General', 'available'), (1, 'GEN-14', 'General', 'available'), (1, 'GEN-15', 'General', 'available'),
+    (1, 'EMR-01', 'Emergency', 'available'), (1, 'EMR-02', 'Emergency', 'available'), (1, 'EMR-03', 'Emergency', 'occupied'), (1, 'EMR-04', 'Emergency', 'available'), (1, 'EMR-05', 'Emergency', 'available'),
+    (1, 'PED-01', 'Pediatric', 'occupied'), (1, 'PED-02', 'Pediatric', 'available'), (1, 'PED-03', 'Pediatric', 'available'), (1, 'PED-04', 'Pediatric', 'available'), (1, 'PED-05', 'Pediatric', 'available'),
+    (1, 'MAT-01', 'Maternity', 'available'), (1, 'MAT-02', 'Maternity', 'occupied'), (1, 'MAT-03', 'Maternity', 'available'), (1, 'MAT-04', 'Maternity', 'available'), (1, 'MAT-05', 'Maternity', 'available');
