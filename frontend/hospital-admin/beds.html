@@ -1,164 +1,175 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bed Management - Smart Hospital</title>
-<link rel="stylesheet" href="../css/style.css">
-<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"></noscript>
-</head>
-<body>
-<div class="dashboard-layout">
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="brand"><i class="fa-solid fa-hospital-user"></i> <span>Hospital</span> Admin</div>
-      <div style="font-size:.75rem;color:rgba(255,255,255,.4);margin-top:.25rem;" id="sideHospitalName">Loading…</div>
-    </div>
-    <nav class="sidebar-nav">
-      <div class="nav-section">Management</div>
-      <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-gauge"></i> Dashboard</a>
-      <a href="profile.html" class="nav-item"><i class="fa-solid fa-building"></i> Profile</a>
-      <a href="beds.html" class="nav-item active"><i class="fa-solid fa-bed"></i> Bed Management</a>
-      <a href="queue.html" class="nav-item"><i class="fa-solid fa-people-waiting"></i> Patient Queue</a>
-      <a href="doctors.html" class="nav-item"><i class="fa-solid fa-user-doctor"></i> Doctors</a>
-    </nav>
-    <div class="sidebar-footer">
-      <button class="btn btn-ghost btn-sm w-full" onclick="logout()" style="color:rgba(255,255,255,.6);justify-content:flex-start;"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
-    </div>
-  </aside>
-
-  <main class="main-content">
-    <div class="page-header">
-      <div><h3>Bed Management</h3><div class="text-muted text-small">Toggle beds to update real-time availability</div></div>
-      <div class="d-flex gap-1 align-center">
-        <button class="btn btn-primary btn-sm" onclick="openModal('addBedModal')"><i class="fa-solid fa-plus"></i> Add Bed</button>
-        <button class="btn btn-ghost btn-sm" onclick="loadBeds()"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
-      </div>
-    </div>
-    <div class="page-content">
-      <!-- Summary -->
-      <div class="stats-grid mb-3" id="bedStats"></div>
-      <!-- Filter -->
-      <div class="filter-chips mb-2" style="display:flex;gap:.5rem;flex-wrap:wrap;">
-        <span class="chip active" onclick="filterBeds('all',this)">All</span>
-        <span class="chip" onclick="filterBeds('ICU',this)">ICU</span>
-        <span class="chip" onclick="filterBeds('General',this)">General</span>
-        <span class="chip" onclick="filterBeds('Emergency',this)">Emergency</span>
-        <span class="chip" onclick="filterBeds('Pediatric',this)">Pediatric</span>
-        <span class="chip" onclick="filterBeds('Maternity',this)">Maternity</span>
-      </div>
-      <div class="bed-grid" id="bedGrid">
-        <div class="text-center" style="grid-column:1/-1;padding:3rem;"><div class="spinner"></div></div>
-      </div>
-    </div>
-  </main>
-</div>
-
-<!-- Add Bed Modal -->
-<div class="modal-overlay" id="addBedModal">
-  <div class="modal">
-    <div class="modal-header"><h4>Add New Bed</h4><button class="modal-close" onclick="closeModal('addBedModal')">✕</button></div>
-    <div class="modal-body">
-      <div class="form-group"><label class="form-label">Bed Number *</label><input type="text" class="form-control" id="nbBedNum" placeholder="e.g. GEN-06"></div>
-      <div class="form-group"><label class="form-label">Ward Type *</label>
-        <select class="form-control" id="nbWardType">
-          <option value="General">General</option><option value="ICU">ICU</option>
-          <option value="Emergency">Emergency</option><option value="Pediatric">Pediatric</option><option value="Maternity">Maternity</option>
-        </select>
-      </div>
-      <div id="addBedMsg"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('addBedModal')">Cancel</button>
-      <button class="btn btn-primary" id="addBedBtn" onclick="addBed()"><i class="fa-solid fa-plus"></i> Add Bed</button>
-    </div>
-  </div>
-</div>
-
-<div id="toast-container"></div>
 <script src="../js/api.js"></script>
 <script>
-if (!Auth.requireRole('hospital_admin')) throw new Error('Redirecting...');
-document.getElementById('sideHospitalName').textContent = Auth.getUser()?.name || '';
-let allBeds = [];
-
-async function loadBeds() {
-  try {
-    allBeds = await apiFetch('/api/beds/my');
-    renderStats();
-    renderBeds('all');
-  } catch(e) { showToast(e.message, 'error'); }
+/* ================= INIT ================= */
+if (!Auth.requireRole('hospital_admin')) {
+  throw new Error('Redirecting...');
 }
 
+const state = {
+  beds: []
+};
+
+document.getElementById('sideHospitalName').textContent =
+  Auth.getUser()?.name || '';
+
+init();
+
+/* ================= MAIN ================= */
+function init() {
+  loadBeds();
+}
+
+/* ================= API ================= */
+async function loadBeds() {
+  try {
+    state.beds = await apiFetch('/api/beds/my');
+    renderStats();
+    renderBeds('all');
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+async function updateBedStatus(id, newStatus) {
+  return apiFetch(`/api/beds/${id}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ status: newStatus })
+  });
+}
+
+async function createBed(data) {
+  return apiFetch('/api/beds', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+/* ================= UI - STATS ================= */
 function renderStats() {
-  const types = ['ICU','General','Emergency','Pediatric','Maternity'];
-  const colors = { ICU: 'danger', General: 'primary', Emergency: 'warning', Pediatric: 'success', Maternity: 'primary' };
-  const available = allBeds.filter(b => b.status === 'available').length;
-  const occupied = allBeds.filter(b => b.status === 'occupied').length;
+  const beds = state.beds;
+
+  const available = beds.filter(b => b.status === 'available').length;
+  const occupied = beds.filter(b => b.status === 'occupied').length;
+
   document.getElementById('bedStats').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Total Beds</div><div class="stat-value">${allBeds.length}</div></div>
-    <div class="stat-card"><div class="stat-label">Available</div><div class="stat-value text-success">${available}</div></div>
-    <div class="stat-card"><div class="stat-label">Occupied</div><div class="stat-value text-danger">${occupied}</div></div>
-    <div class="stat-card"><div class="stat-label">Occupancy</div><div class="stat-value">${allBeds.length ? Math.round(occupied/allBeds.length*100) : 0}%</div></div>
+    <div class="stat-card">
+      <div class="stat-label">Total Beds</div>
+      <div class="stat-value">${beds.length}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Available</div>
+      <div class="stat-value text-success">${available}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Occupied</div>
+      <div class="stat-value text-danger">${occupied}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Occupancy</div>
+      <div class="stat-value">
+        ${beds.length ? Math.round((occupied / beds.length) * 100) : 0}%
+      </div>
+    </div>
   `;
 }
 
+/* ================= UI - BEDS ================= */
 function renderBeds(filter) {
-  let beds = filter === 'all' ? allBeds : allBeds.filter(b => b.ward_type === filter);
+  const beds =
+    filter === 'all'
+      ? state.beds
+      : state.beds.filter(b => b.ward_type === filter);
+
+  const grid = document.getElementById('bedGrid');
+
   if (!beds.length) {
-    document.getElementById('bedGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--text-muted);">No beds for this ward.</div>';
+    grid.innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--text-muted);">
+        No beds for this ward.
+      </div>
+    `;
     return;
   }
-  document.getElementById('bedGrid').innerHTML = beds.map(b => `
-    <div class="bed-card ${b.status}" onclick="toggleBed(${b.id}, '${b.status}', this)">
-      <div class="bed-num">${b.bed_number}</div>
-      <div class="bed-type">${b.ward_type}</div>
-      <div class="bed-status">${b.status === 'available' ? '✓ Free' : '✗ Occupied'}</div>
-    </div>`).join('');
+
+  grid.innerHTML = beds.map(createBedCard).join('');
 }
 
+function createBedCard(bed) {
+  return `
+    <div class="bed-card ${bed.status}"
+         onclick="handleBedToggle(${bed.id}, '${bed.status}', this)">
+      <div class="bed-num">${bed.bed_number}</div>
+      <div class="bed-type">${bed.ward_type}</div>
+      <div class="bed-status">
+        ${bed.status === 'available' ? '✓ Free' : '✗ Occupied'}
+      </div>
+    </div>
+  `;
+}
+
+/* ================= EVENTS ================= */
 function filterBeds(filter, el) {
-  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.chip').forEach(c =>
+    c.classList.remove('active')
+  );
   el.classList.add('active');
   renderBeds(filter);
 }
 
-async function toggleBed(id, currentStatus, el) {
-  const newStatus = currentStatus === 'available' ? 'occupied' : 'available';
+async function handleBedToggle(id, currentStatus, el) {
+  const newStatus =
+    currentStatus === 'available' ? 'occupied' : 'available';
+
   try {
-    await apiFetch(`/api/beds/${id}/status`, { method: 'PUT', body: JSON.stringify({ status: newStatus }) });
-    const bed = allBeds.find(b => b.id === id);
+    await updateBedStatus(id, newStatus);
+
+    const bed = state.beds.find(b => b.id === id);
     if (bed) {
       bed.status = newStatus;
-      el.className = `bed-card ${newStatus}`;
-      el.querySelector('.bed-status').textContent = newStatus === 'available' ? '✓ Free' : '✗ Occupied';
     }
+
+    updateBedCardUI(el, newStatus);
     renderStats();
+
     showToast(`Bed marked as ${newStatus}`, 'success');
-  } catch(e) { showToast(e.message, 'error'); }
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
 }
 
+function updateBedCardUI(el, status) {
+  el.className = `bed-card ${status}`;
+  el.querySelector('.bed-status').textContent =
+    status === 'available' ? '✓ Free' : '✗ Occupied';
+}
+
+/* ================= ADD BED ================= */
 async function addBed() {
   const btn = document.getElementById('addBedBtn');
+
   setLoading(btn, true, 'Adding...');
+
   try {
-    await apiFetch('/api/beds', { method: 'POST', body: JSON.stringify({
+    await createBed({
       bed_number: document.getElementById('nbBedNum').value.trim(),
       ward_type: document.getElementById('nbWardType').value
-    })});
+    });
+
     closeModal('addBedModal');
     showToast('Bed added successfully', 'success');
+
     loadBeds();
-  } catch(e) {
-    document.getElementById('addBedMsg').innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+  } catch (e) {
+    document.getElementById('addBedMsg').innerHTML =
+      `<div class="alert alert-error">${e.message}</div>`;
   }
+
   setLoading(btn, false);
 }
 
-function logout() { Auth.clearSession(); window.location.href = '../index.html'; }
-loadBeds();
+/* ================= AUTH ================= */
+function logout() {
+  Auth.clearSession();
+  window.location.href = '../index.html';
+}
 </script>
-</body>
-</html>
