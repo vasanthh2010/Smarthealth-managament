@@ -43,16 +43,55 @@
   .orb3 { width: 200px; height: 200px; background: rgba(220,38,38,0.08); top: 40%; right: 10%; }
   @media(max-width:768px) { .role-cards { grid-template-columns: 1fr; max-width: 360px; } .features-bar { flex-direction: column; gap: 0.75rem; align-items: center; } }
   @keyframes pulse { 0%,100%{box-shadow:0 8px 32px rgba(37,99,235,0.4);} 50%{box-shadow:0 8px 48px rgba(37,99,235,0.6);} }
+  
+  /* Splash Screen */
+  #splash-screen {
+    position: fixed; inset: 0; background: #0F172A;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 10000; transition: opacity 0.8s ease;
+  }
+  .splash-logo {
+    width: 200px;
+    height: auto;
+    animation: splash-blink 1s infinite alternate;
+    filter: drop-shadow(0 0 30px rgba(37,99,235,0.4));
+  }
+  @keyframes splash-blink {
+    from { opacity: 0.5; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1.05); }
+  }
+
+  /* CSS Shield Logo */
+  .shield-logo {
+    width: 100px; height: 120px;
+    background: linear-gradient(135deg, #2563EB 0%, #06B6D4 100%);
+    clip-path: polygon(0% 0%, 100% 0%, 100% 70%, 50% 100%, 0% 70%);
+    display: flex; align-items: center; justify-content: center;
+    position: relative; box-shadow: 0 0 40px rgba(37,99,235,0.4);
+    border: 3px solid rgba(255,255,255,0.2);
+  }
+  .shield-logo::before {
+    content: ''; position: absolute; width: 40px; height: 10px; background: white; border-radius: 5px;
+  }
+  .shield-logo::after {
+    content: ''; position: absolute; height: 40px; width: 10px; background: white; border-radius: 5px;
+  }
+  .shield-logo.small { width: 44px; height: 52px; }
+  .shield-logo.small::before { width: 18px; height: 4px; }
+  .shield-logo.small::after { height: 18px; width: 4px; }
 </style>
 </head>
 <body>
+<div id="splash-screen">
+  <img src="images/logo.png" alt="Smart Hospital Logo" class="splash-logo">
+</div>
 <div class="hero">
   <div class="floating-orb orb1"></div>
   <div class="floating-orb orb2"></div>
   <div class="floating-orb orb3"></div>
 
   <div class="hero-logo">
-    <div class="logo-box"><i class="fa-solid fa-hospital"></i></div>
+    <img src="images/logo.png" alt="Logo" style="width: 80px; height: auto; filter: drop-shadow(0 0 15px rgba(37,99,235,0.3));">
   </div>
 
   <h1 class="hero-title">Smart <span>Hospital</span><br>Management System</h1>
@@ -91,6 +130,17 @@
 </div>
 
 <script>
+// Splash-screen logic
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const ss = document.getElementById('splash-screen');
+    if (ss) {
+      ss.style.opacity = '0';
+      setTimeout(() => ss.remove(), 800);
+    }
+  }, 3000); // 3 seconds blinking
+});
+
 function navigate(role) {
   const paths = {
     patient: 'patient/login.html',
