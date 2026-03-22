@@ -79,7 +79,7 @@ CREATE TABLE beds (
 DROP TABLE IF EXISTS tokens;
 CREATE TABLE tokens (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
+    user_id INTEGER, -- Nullable for offline booking
     doctor_id INTEGER NOT NULL,
     hospital_id INTEGER NOT NULL,
     token_number INTEGER NOT NULL,
@@ -87,6 +87,9 @@ CREATE TABLE tokens (
     booking_date DATE NOT NULL,
     reason TEXT,
     estimated_wait_minutes INTEGER DEFAULT 0,
+    is_offline INTEGER DEFAULT 0,
+    offline_name TEXT,
+    offline_phone TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

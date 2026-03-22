@@ -84,10 +84,10 @@ def on_leave_hospital(data):
 def index():
     return send_from_directory('../frontend', 'index.html')
 
-@app.route('/<path:path>')
+@app.route('/<path:path>', methods=['GET', 'POST'])
 def serve_static(path):
     full = os.path.join(app.static_folder, path)
-    if os.path.exists(full):
+    if os.path.exists(full) and os.path.isfile(full):
         return send_from_directory(app.static_folder, path)
     return send_from_directory('../frontend', 'index.html')
 

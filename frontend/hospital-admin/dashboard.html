@@ -89,7 +89,7 @@
 <div id="toast-container"></div>
 <script src="../js/api.js"></script>
 <script>
-if (!Auth.requireRole('hospital_admin')) return;
+if (!Auth.requireRole('hospital_admin')) throw new Error('Redirecting...');
 const u = Auth.getUser();
 document.getElementById('sideHospitalName').textContent = u?.name || '';
 document.getElementById('hospTitle').textContent = u?.name || 'Dashboard';

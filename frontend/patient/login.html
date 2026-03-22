@@ -65,10 +65,12 @@
 <div id="toast-container"></div>
 <script src="../js/api.js"></script>
 <script>
-// Redirect if already logged in
+// Redirect if already logged in - DISABLED for demo stability
+/*
 if (Auth.isLoggedIn() && Auth.getUser()?.role === 'patient') {
   window.location.href = 'home.html';
 }
+*/
 function togglePwd(id, icon) {
   const input = document.getElementById(id);
   if (input.type === 'password') { input.type = 'text'; icon.className = 'input-icon-right fa-solid fa-eye-slash'; }

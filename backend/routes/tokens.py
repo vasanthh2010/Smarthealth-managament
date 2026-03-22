@@ -154,7 +154,7 @@ def hospital_today_tokens(current_user):
     sql = '''SELECT t.*, u.full_name AS patient_name, u.phone AS patient_phone,
                 u.blood_group, d.name AS doctor_name, d.specialization
             FROM tokens t
-            JOIN users u ON u.id = t.user_id
+            LEFT JOIN users u ON u.id = t.user_id
             JOIN doctors d ON d.id = t.doctor_id
             WHERE t.hospital_id=%s AND t.booking_date=date('now')'''
     params = [current_user['hospital_id']]
@@ -168,5 +168,51 @@ def hospital_today_tokens(current_user):
     for t in tokens:
         t['booking_date'] = str(t['booking_date'])
         t['created_at'] = str(t['created_at'])
+        # Handle offline patient details
+        if t.get('is_offline'):
+            t['patient_name'] = t['offline_name']
+            t['patient_phone'] = t['offline_phone']
+            t['blood_group'] = 'N/A'
         result.append(t)
     return jsonify(result), 200
+
+# ─── ADMIN: BOOK OFFLINE TOKEN ───────────────────────────────────────────────────
+@tokens_bp.route('/api/tokens/hospital/offline', methods=['POST'])
+@require_role('hospital_admin')
+def book_offline_token(current_user):
+    data = request.get_json()
+    doctor_id = data.get('doctor_id')
+    patient_name = data.get('patient_name')
+    patient_phone = data.get('patient_phone')
+
+    if not doctor_id or not patient_name or not patient_phone:
+        return jsonify({'error': 'doctor_id, patient_name, and patient_phone are required'}), 400
+
+    doctor = query_db('SELECT * FROM doctors WHERE id=%s AND hospital_id=%s', 
+                      (doctor_id, current_user['hospital_id']), one=True)
+    if not doctor:
+        return jsonify({'error': 'Doctor not found at your hospital'}), 404
+
+    today = date.today().isoformat()
+    
+    # Get next token number for this doctor today
+    last = query_db(
+        'SELECT MAX(token_number) AS max_token FROM tokens WHERE doctor_id=%s AND booking_date=%s',
+        (doctor_id, today), one=True
+    )
+    token_number = (last['max_token'] or 0) + 1
+
+    token_id = query_db(
+        '''INSERT INTO tokens (doctor_id, hospital_id, token_number, booking_date, 
+           is_offline, offline_name, offline_phone, status)
+           VALUES (%s,%s,%s,%s,1,%s,%s,'pending')''',
+        (doctor_id, current_user['hospital_id'], token_number, today, 
+         patient_name, patient_phone),
+        commit=True
+    )
+
+    return jsonify({
+        'message': 'Offline token booked successfully',
+        'token_id': token_id,
+        'token_number': token_number
+    }), 201

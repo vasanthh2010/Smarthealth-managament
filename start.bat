@@ -24,8 +24,8 @@ python init_db.py
 
 REM Start Flask
 echo.
-echo [3/3] Starting Flask backend on http://localhost:5001 ...
-echo [4/4] Open your browser and go to: http://localhost:5001
+echo [3/3] Starting Flask backend on http://localhost:5000 ...
+echo [4/4] Open your browser and go to: http://localhost:5000
 echo.
 echo ================================================
 echo   DEMO CREDENTIALS:
