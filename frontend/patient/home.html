@@ -10,99 +10,269 @@
 <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"></noscript>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-  .top-bar { background: white; border-bottom: 1px solid var(--border); padding: 1rem 1.25rem; position: sticky; top: 0; z-index: 50; }
-  .nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; max-width: 960px; margin: 0 auto; }
-  .brand { font-weight: 800; font-size: 1.1rem; color: var(--primary); white-space: nowrap; }
-  .search-wrapper { flex: 1; max-width: 400px; }
-  .user-menu { display: flex; align-items: center; gap: 0.5rem; }
-  .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary-bg); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
-  .main { max-width: 960px; margin: 0 auto; padding: 1.5rem 1.25rem 100px; }
-  .view-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
-  .view-tab { padding: 0.5rem 1.25rem; border-radius: var(--radius-full); font-size: 0.875rem; font-weight: 600; cursor: pointer; border: 1.5px solid var(--border); background: white; color: var(--text-muted); transition: var(--transition); }
-  .view-tab.active { background: var(--primary); border-color: var(--primary); color: white; }
-  #mapView { height: 320px; border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1.5rem; display: none; box-shadow: var(--shadow); }
-  .hospital-card { background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.25rem; margin-bottom: 0.875rem; display: flex; gap: 1.25rem; align-items: flex-start; transition: var(--transition-slow); cursor: pointer; }
-  .hospital-card:hover { box-shadow: var(--shadow-lg); border-color: var(--primary); transform: translateY(-2px); }
-  .hospital-icon { width: 52px; height: 52px; background: var(--primary-bg); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--primary); flex-shrink: 0; }
+  :root {
+    --primary: #3B82F6;
+    --primary-light: #60A5FA;
+    --primary-bg: #eff6ff;
+    --success: #10B981;
+    --danger: #EF4444;
+    --bg-light: #f8fafc;
+    --bg-zen: #fcfdff;
+    --card-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(255, 255, 255, 0.5);
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --radius-xl: 24px;
+    --radius-lg: 20px;
+    --shadow-soft: 0 10px 30px -5px rgba(0,0,0,0.03), 0 4px 6px -2px rgba(0,0,0,0.01);
+    --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  body { 
+    background: var(--bg-zen); 
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: var(--text-main);
+    margin: 0;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* Background Glows */
+  .bg-glow { position: fixed; inset: 0; background: radial-gradient(circle at 80% 20%, #eff6ff 0%, transparent 50%), radial-gradient(circle at 20% 80%, #f5f3ff 0%, transparent 50%); z-index: -1; }
+
+  .top-bar { 
+    background: rgba(255, 255, 255, 0.7); 
+    backdrop-filter: blur(15px); 
+    -webkit-backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(0,0,0,0.05); 
+    padding: 0.75rem 1.5rem; 
+    position: sticky; 
+    top: 0; 
+    z-index: 50; 
+  }
+  
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; max-width: 1000px; margin: 0 auto; }
+  
+  .brand { 
+    font-weight: 800; 
+    font-size: 1.25rem; 
+    color: var(--primary); 
+    display: flex; 
+    align-items: center; 
+    gap: 0.6rem;
+    letter-spacing: -0.02em;
+  }
+  
+  .search-wrapper { flex: 1; max-width: 500px; }
+  .search-bar {
+    background: white;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 14px;
+    padding: 0.6rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    transition: var(--transition);
+  }
+  .search-bar:focus-within { border-color: var(--primary-light); box-shadow: 0 8px 20px rgba(59,130,246,0.1); }
+  .search-bar input { border: none; background: none; outline: none; width: 100%; font-size: 0.9rem; color: var(--text-main); }
+  .search-bar i { color: var(--text-muted); font-size: 0.9rem; }
+
+  .user-menu { display: flex; align-items: center; gap: 1rem; }
+  .user-avatar { 
+    width: 40px; 
+    height: 40px; 
+    border-radius: 12px; 
+    background: linear-gradient(135deg, var(--primary), var(--primary-light)); 
+    color: white; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-weight: 700; 
+    box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .user-avatar:hover { transform: scale(1.05) rotate(5deg); }
+
+  .main { max-width: 1000px; margin: 0 auto; padding: 2.5rem 1.5rem 120px; }
+
+  .greeting-section h2 { font-size: 1.75rem; font-weight: 800; margin-bottom: 0.5rem; letter-spacing: -0.02em; }
+  .greeting-section p { font-size: 0.95rem; color: var(--text-muted); }
+
+  .view-tabs { display: flex; gap: 0.75rem; margin: 2rem 0; }
+  .view-tab { 
+    padding: 0.6rem 1.5rem; 
+    border-radius: 12px; 
+    font-size: 0.85rem; 
+    font-weight: 600; 
+    cursor: pointer; 
+    border: 1px solid rgba(0,0,0,0.05); 
+    background: white; 
+    color: var(--text-muted); 
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  }
+  .view-tab.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 10px 20px -5px rgba(59,130,246,0.4); }
+  .view-tab:hover:not(.active) { background: #f1f5f9; transform: translateY(-1px); }
+
+  #mapView { height: 400px; border-radius: var(--radius-xl); overflow: hidden; margin-bottom: 2rem; box-shadow: var(--shadow-soft); border: 4px solid white; display: none; }
+
+  .filter-chips { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2.5rem; }
+  .chip { 
+    padding: 0.5rem 1.25rem; 
+    border-radius: 10px; 
+    font-size: 0.8rem; 
+    font-weight: 600; 
+    cursor: pointer; 
+    border: 1px solid rgba(0,0,0,0.04); 
+    background: white; 
+    color: var(--text-muted); 
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .chip.active { border-color: rgba(59,130,246,0.2); background: var(--primary-bg); color: var(--primary); box-shadow: 0 4px 12px rgba(59,130,246,0.05); }
+
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .section-header h2 { font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
+
+  .hospital-card { 
+    background: var(--card-bg); 
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: var(--radius-xl); 
+    border: 1px solid var(--glass-border);
+    padding: 1.5rem; 
+    margin-bottom: 1.25rem; 
+    display: flex; 
+    gap: 1.5rem; 
+    align-items: center; 
+    transition: var(--transition); 
+    cursor: pointer; 
+    box-shadow: var(--shadow-soft);
+  }
+  .hospital-card:hover { transform: translateY(-4px) scale(1.01); border-color: var(--primary-light); box-shadow: 0 20px 40px -10px rgba(0,0,0,0.06); }
+
+  .hospital-icon { 
+    width: 64px; 
+    height: 64px; 
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe); 
+    border-radius: 18px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 1.5rem; 
+    color: var(--primary); 
+    flex-shrink: 0; 
+  }
+
   .hospital-info { flex: 1; }
-  .hospital-name { font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem; }
-  .hospital-addr { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.625rem; }
-  .hospital-meta { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
-  .meta-tag { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; color: var(--text-muted); }
-  .hospital-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; flex-shrink: 0; }
-  .queue-badge { font-size: 0.75rem; font-weight: 600; }
-  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-  .section-header h2 { font-size: 1.1rem; }
-  .filter-chips { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
-  .chip { padding: 0.35rem 0.875rem; border-radius: var(--radius-full); font-size: 0.8rem; font-weight: 500; cursor: pointer; border: 1.5px solid var(--border); background: white; color: var(--text-muted); transition: var(--transition); }
-  .chip.active { border-color: var(--primary); background: var(--primary-bg); color: var(--primary); }
+  .hospital-name { font-weight: 700; font-size: 1.15rem; color: var(--text-main); margin-bottom: 0.4rem; }
+  .hospital-addr { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.4rem; }
+  .hospital-meta { display: flex; flex-wrap: wrap; gap: 1rem; }
+  .meta-tag { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 500; color: #64748b; }
+  .meta-tag i { color: var(--primary-light); font-size: 0.9rem; }
+
+  .hospital-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.6rem; }
+  
+  .badge-dot { padding: 0.3rem 0.75rem; border-radius: 8px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
+  .badge-success { background: #ecfdf5; color: #059669; }
+  .badge-danger { background: #fef2f2; color: #dc2626; }
+  
+  .queue-badge { font-size: 0.85rem; font-weight: 700; color: var(--primary); }
+
+  .bottom-nav { 
+    position: fixed; 
+    bottom: 0; 
+    left: 0; 
+    right: 0; 
+    background: rgba(255, 255, 255, 0.8); 
+    backdrop-filter: blur(20px); 
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(0,0,0,0.05); 
+    display: flex; 
+    padding: 0.5rem 0.5rem 1.5rem; 
+    z-index: 50; 
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.03);
+  }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; text-decoration: none; color: var(--text-muted); font-size: 0.7rem; font-weight: 600; transition: var(--transition); padding: 0.6rem; border-radius: 12px; }
+  .nav-item i { font-size: 1.35rem; }
+  .nav-item.active { color: var(--primary); }
+  .nav-item:hover:not(.active) { background: rgba(59,130,246,0.05); color: var(--text-main); }
+
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeInUp 0.6s ease both; }
 </style>
 </head>
 <body>
-<div class="top-bar">
-  <div class="nav-inner">
-    <div class="brand"><i class="fa-solid fa-hospital"></i> SmartHospital</div>
-    <div class="search-wrapper">
-      <div class="search-bar">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="searchInput" placeholder="Search hospitals by name or city…">
+  <div class="bg-glow"></div>
+
+  <div class="top-bar">
+    <div class="nav-inner">
+      <div class="brand"><i class="fa-solid fa-house-medical"></i> SmartHospital</div>
+      <div class="search-wrapper">
+        <div class="search-bar">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="searchInput" placeholder="Search by name or location…">
+        </div>
+      </div>
+      <div class="user-menu">
+        <div class="user-avatar" id="userAvatar" onclick="window.location.href='profile.html'">V</div>
       </div>
     </div>
-    <div class="user-menu">
-      <a href="emergency.html" class="btn btn-danger btn-sm"><i class="fa-solid fa-ambulance"></i> Emergency</a>
-      <div class="user-avatar" id="userAvatar" title="My Profile" onclick="window.location.href='profile.html'">P</div>
+  </div>
+
+  <div class="main">
+    <!-- Greeting -->
+    <div class="greeting-section mb-2">
+      <h2 id="greeting">Good afternoon, Vasanthh! 👋</h2>
+      <p>Your health journey starts here. Find the best care today.</p>
+    </div>
+
+    <!-- View Toggle -->
+    <div class="view-tabs">
+      <button class="view-tab active" onclick="switchView('list',this)"><i class="fa-solid fa-list-ul"></i> List View</button>
+      <button class="view-tab" onclick="switchView('map',this)"><i class="fa-solid fa-map-marked-alt"></i> Area Map</button>
+    </div>
+
+    <!-- Map -->
+    <div id="mapView"></div>
+
+    <!-- Filters -->
+    <div class="filter-chips">
+      <span class="chip active" onclick="filterChip(this,'all')"><i class="fa-solid fa-border-all"></i> All Hospitals</span>
+      <span class="chip" onclick="filterChip(this,'nearby')"><i class="fa-solid fa-location-arrow"></i> Nearby</span>
+      <span class="chip" onclick="filterChip(this,'beds')"><i class="fa-solid fa-bed"></i> Available Beds</span>
+      <span class="chip" onclick="filterChip(this,'doctors')"><i class="fa-solid fa-stethoscope"></i> Doctors Online</span>
+    </div>
+
+    <!-- Hospital List -->
+    <div class="section-header">
+      <h2>Featured Hospitals</h2>
+      <span class="text-muted text-small" id="countLabel">Loading...</span>
+    </div>
+
+    <div id="hospitalList">
+      <div style="text-align:center;padding:5rem 0;">
+        <div class="spinner"></div>
+        <p class="mt-2 text-muted">Refreshing healthcare provider list...</p>
+      </div>
     </div>
   </div>
-</div>
 
-<div class="main">
-  <!-- Greeting -->
-  <div class="mb-2">
-    <h2 id="greeting">Good day! 👋</h2>
-    <p class="text-muted text-small">Find hospitals, check availability & book your token</p>
-  </div>
-
-  <!-- View Toggle -->
-  <div class="view-tabs">
-    <button class="view-tab active" onclick="switchView('list',this)"><i class="fa-solid fa-list"></i> List</button>
-    <button class="view-tab" onclick="switchView('map',this)"><i class="fa-solid fa-map-location-dot"></i> Map</button>
-  </div>
-
-  <!-- Map -->
-  <div id="mapView"></div>
-
-  <!-- Filters -->
-  <div class="filter-chips">
-    <span class="chip active" onclick="filterChip(this,'all')">All Hospitals</span>
-    <span class="chip" onclick="filterChip(this,'nearby')"><i class="fa-solid fa-location-crosshairs"></i> Nearby</span>
-    <span class="chip" onclick="filterChip(this,'beds')"><i class="fa-solid fa-bed"></i> Beds Available</span>
-    <span class="chip" onclick="filterChip(this,'doctors')"><i class="fa-solid fa-user-doctor"></i> Doctors Available</span>
-  </div>
-
-  <!-- Hospital List -->
-  <div class="section-header">
-    <h2>Nearby Hospitals</h2>
-    <span class="text-muted text-small" id="countLabel"></span>
-  </div>
-
-  <div id="hospitalList">
-    <div style="text-align:center;padding:3rem 0;">
-      <div class="spinner"></div>
-      <p class="mt-2 text-muted">Loading hospitals...</p>
-    </div>
-  </div>
-</div>
-
-<!-- Emergency FAB -->
-<a href="emergency.html" class="fab" title="Emergency">🚨</a>
-
-<!-- Bottom Nav -->
-<nav style="position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--border);display:flex;z-index:50;">
-  <a href="home.html" style="flex:1;padding:0.75rem;text-align:center;font-size:0.72rem;font-weight:600;color:var(--primary);text-decoration:none;"><i class="fa-solid fa-house" style="display:block;font-size:1.2rem;margin-bottom:0.2rem;"></i>Home</a>
-  <a href="profile.html" style="flex:1;padding:0.75rem;text-align:center;font-size:0.72rem;font-weight:600;color:var(--text-muted);text-decoration:none;"><i class="fa-solid fa-user" style="display:block;font-size:1.2rem;margin-bottom:0.2rem;"></i>Profile</a>
-  <a href="track-token.html" style="flex:1;padding:0.75rem;text-align:center;font-size:0.72rem;font-weight:600;color:var(--text-muted);text-decoration:none;"><i class="fa-solid fa-ticket" style="display:block;font-size:1.2rem;margin-bottom:0.2rem;"></i>My Tokens</a>
-  <a href="emergency.html" style="flex:1;padding:0.75rem;text-align:center;font-size:0.72rem;font-weight:600;color:var(--danger);text-decoration:none;"><i class="fa-solid fa-truck-medical" style="display:block;font-size:1.2rem;margin-bottom:0.2rem;"></i>Emergency</a>
-</nav>
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <a href="home.html" class="nav-item active"><i class="fa-solid fa-house-chimney"></i>Home</a>
+    <a href="profile.html" class="nav-item"><i class="fa-solid fa-circle-user"></i>Profile</a>
+    <a href="track-token.html" class="nav-item"><i class="fa-solid fa-receipt"></i>Tokens</a>
+    <a href="emergency.html" class="nav-item" style="color:var(--danger);"><i class="fa-solid fa-truck-fast"></i>SOS</a>
+  </nav>
 
 <div id="toast-container"></div>
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -141,17 +311,16 @@ function renderHospitals() {
 
   if (activeFilter === 'nearby') {
     if (userCoords) {
-      // Strict 50km filter
       list = list.filter(h => h._dist !== null && h._dist <= 50000);
       list.sort((a, b) => (a._dist || 999999) - (b._dist || 999999));
     }
   }
 
-  document.getElementById('countLabel').textContent = `${list.length} hospital${list.length !== 1 ? 's' : ''}`;
+  document.getElementById('countLabel').textContent = `${list.length} healthcare provider${list.length !== 1 ? 's' : ''} found`;
 
   if (!list.length) {
     document.getElementById('hospitalList').innerHTML =
-      '<div class="text-center" style="padding:3rem 0;"><i class="fa-solid fa-hospital" style="font-size:3rem;color:var(--border);"></i><p class="mt-2 text-muted">No hospitals found</p></div>';
+      '<div class="text-center" style="padding:5rem 0;"><i class="fa-solid fa-hospital-user" style="font-size:4rem;color:rgba(0,0,0,0.05);"></i><p class="mt-3 text-muted">No hospitals match your search criteria</p></div>';
     return;
   }
   document.getElementById('hospitalList').innerHTML = list.map(h => `
@@ -159,18 +328,18 @@ function renderHospitals() {
       <div class="hospital-icon"><i class="fa-solid fa-hospital-alt"></i></div>
       <div class="hospital-info">
         <div class="hospital-name">${h.name}</div>
-        <div class="hospital-addr"><i class="fa-solid fa-location-dot"></i> ${h.address}, ${h.city} ${h._dist ? ` · <span class="text-primary fw-600">${fmt.distance(h._dist)}</span>` : ''}</div>
+        <div class="hospital-addr"><i class="fa-solid fa-location-arrow"></i> ${h.address}, ${h.city} ${h._dist ? ` · <span style="color:var(--primary); font-weight:700;">${fmt.distance(h._dist)} away</span>` : ''}</div>
         <div class="hospital-meta">
-          <span class="meta-tag"><i class="fa-solid fa-user-doctor"></i> ${h.doctor_count} doctors</span>
-          <span class="meta-tag"><i class="fa-solid fa-bed"></i> ${h.available_beds}/${h.total_bed_count} beds</span>
-          <span class="meta-tag"><i class="fa-solid fa-people-waiting"></i> ${h.queue_count} in queue</span>
+          <span class="meta-tag"><i class="fa-solid fa-user-md"></i> ${h.doctor_count} Doctors</span>
+          <span class="meta-tag"><i class="fa-solid fa-bed"></i> ${h.available_beds} Beds Free</span>
+          <span class="meta-tag"><i class="fa-solid fa-clock"></i> ${h.queue_count} Tokens</span>
         </div>
       </div>
       <div class="hospital-right">
         ${h.available_beds > 0
-          ? '<span class="badge badge-success badge-dot">Beds Free</span>'
-          : '<span class="badge badge-danger badge-dot">Full</span>'}
-        <span class="badge badge-primary queue-badge">${h.queue_count} waiting</span>
+          ? '<span class="badge-dot badge-success">Beds Available</span>'
+          : '<span class="badge-dot badge-danger">No Beds</span>'}
+        <span class="queue-badge"><i class="fa-solid fa-users-viewfinder"></i> ${h.queue_count} Waiting</span>
       </div>
     </div>`).join('');
 }

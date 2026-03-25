@@ -10,52 +10,174 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"></noscript>
   <style>
-    .auth-container { padding: 3rem 1rem; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
-    .auth-form { max-width: 800px; width: 100%; margin: 0 auto; }
-    .auth-header { text-align: center; margin-bottom: 2rem; }
-    .auth-header i { font-size: 3rem; color: var(--success); margin-bottom: 1rem; }
+  :root {
+    --primary: #3B82F6;
+    --success: #10B981;
+    --bg-dark: #020617;
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --radius-xl: 24px;
+    --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-    }
+  body { 
+    background: var(--bg-dark); 
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: white;
+    min-height: 100vh; 
+    margin: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
 
-    .section-title {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: var(--text-light);
-      text-transform: uppercase;
-      margin: 1.5rem 0 1rem;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 0.5rem;
-    }
+  /* Background Elements */
+  .bg-glow { position: fixed; inset: 0; background: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%); z-index: -1; }
+  .floating-orb { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.2; animation: move-orb 20s infinite alternate linear; z-index: -1; }
+  .orb1 { width: 500px; height: 500px; background: #1e40af; top: -100px; left: -100px; }
+  .orb2 { width: 400px; height: 400px; background: #065f46; bottom: -50px; right: -50px; }
+  @keyframes move-orb { from { transform: translate(0, 0); } to { transform: translate(50px, 50px); } }
 
-    @media (max-width: 600px) {
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
-    }
+  .auth-container { padding: 4rem 1.5rem; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+  
+  .auth-form { 
+    background: var(--card-bg); 
+    backdrop-filter: blur(20px); 
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl); 
+    padding: 3rem; 
+    width: 100%;
+    max-width: 1000px;
+    box-shadow: 0 40px 80px -20px rgba(0,0,0,0.5);
+    animation: fadeInUp 0.8s ease;
+  }
+
+  .auth-header { text-align: center; margin-bottom: 3rem; }
+  .auth-header img { width: 80px; height: auto; filter: drop-shadow(0 0 15px rgba(59,130,246,0.3)); margin-bottom: 1.5rem; }
+  .auth-header h2 { font-size: 2.25rem; font-weight: 800; margin: 0; background: linear-gradient(to bottom, #fff, #94a3b8); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .auth-header p { color: #94a3b8; font-size: 1rem; margin-top: 0.75rem; }
+
+  .section-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 3.5rem 0 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .section-hospital { color: #60A5FA; border-color: rgba(96, 165, 250, 0.2); }
+  .section-location { color: #F472B6; border-color: rgba(244, 114, 182, 0.2); }
+  .section-contact { color: #34D399; border-color: rgba(52, 211, 153, 0.2); }
+  .section-doctors { color: #A78BFA; border-color: rgba(167, 139, 250, 0.2); }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .form-group { margin-bottom: 1.5rem; }
+  .form-label { display: block; font-size: 0.85rem; font-weight: 600; color: #cbd5e1; margin-bottom: 0.6rem; margin-left: 0.25rem; }
+  
+  .input-with-icon { position: relative; }
+  .form-control {
+    width: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    padding: 1rem 1rem 1rem 3rem;
+    color: white;
+    font-size: 0.95rem;
+    transition: var(--transition);
+    box-sizing: border-box;
+  }
+  .form-control::placeholder { color: #475569; }
+  
+  .form-control:focus {
+    outline: none;
+    background: rgba(30, 41, 59, 0.8);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+  }
+  
+  .input-with-icon i { 
+    position: absolute; 
+    left: 1.25rem; 
+    top: 50%; 
+    transform: translateY(-50%); 
+    font-size: 1.1rem; 
+    transition: var(--transition);
+  }
+
+  .section-hospital ~ .form-group .input-with-icon i { color: #60A5FA; }
+  .section-location ~ .form-group .input-with-icon i { color: #F472B6; }
+  .section-contact ~ .form-group .input-with-icon i { color: #34D399; }
+  
+  .form-control:focus + i { transform: translateY(-50%) scale(1.1); }
+
+  textarea.form-control { padding-left: 1rem; min-height: 120px; resize: vertical; }
+
+  .doctor-row { 
+    background: rgba(255, 255, 255, 0.02); 
+    border: 1px solid rgba(167, 139, 250, 0.1); 
+    padding: 2.5rem; 
+    border-radius: 20px; 
+    margin-bottom: 2rem; 
+    position: relative;
+    transition: var(--transition);
+  }
+  .doctor-row:hover { background: rgba(255, 255, 255, 0.04); border-color: rgba(167, 139, 250, 0.3); }
+
+  .btn-success {
+    background: var(--success);
+    color: white;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .btn-success:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(16,185,129,0.4); }
+
+  .btn-ghost { color: #94a3b8; text-decoration: none; font-size: 0.85rem; transition: var(--transition); display: inline-flex; align-items: center; gap: 0.5rem; border: none; background: none; cursor: pointer; }
+  .btn-ghost:hover { color: white; }
+
+  .alert-info {
+    background: rgba(59, 130, 246, 0.05);
+    border: 1px solid rgba(59, 130, 246, 0.1);
+    color: #93c5fd;
+    padding: 1.25rem;
+    border-radius: 12px;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } .auth-form { padding: 2rem; } }
   </style>
 </head>
 
-<body class="bg-light">
+<body class="bg-dark">
+  <div class="bg-glow"></div>
+  <div class="floating-orb orb1"></div>
+  <div class="floating-orb orb2"></div>
 
   <div class="auth-container">
-    <div class="card auth-form">
+    <div class="auth-form">
       <div class="auth-header">
-        <div
-          style="display:inline-flex; width:64px; height:64px; background:var(--success-bg); color:var(--success); border-radius:16px; align-items:center; justify-content:center; font-size:2rem; margin-bottom:1rem;">
-          <i class="fa-solid fa-file-medical"></i>
-        </div>
+        <img src="../images/logo.png" alt="Logo">
         <h2>Register Your Hospital</h2>
-        <p class="text-muted">Join our network to manage beds and tokens efficiently.</p>
+        <p>Join our secure network to manage healthcare resources efficiently.</p>
       </div>
 
       <form id="hospitalRegForm" onsubmit="handleRegistration(event)">
-        <div class="section-title">Hospital Information</div>
+        <div class="section-title section-hospital">
+          <i class="fa-solid fa-hospital-user"></i> Hospital Information
+        </div>
         <div class="form-group">
-          <label>Hospital Name *</label>
+          <label class="form-label">Hospital Name *</label>
           <div class="input-with-icon">
             <i class="fa-solid fa-hospital"></i>
             <input type="text" class="form-control" id="name" required placeholder="e.g. City General Hospital">
@@ -63,71 +185,74 @@
         </div>
 
         <div class="form-group">
-          <label>About Hospital (Description)</label>
+          <label class="form-label">About Hospital (Description)</label>
           <textarea class="form-control" id="description" rows="3"
             placeholder="Briefly describe your hospital's specialties..."></textarea>
         </div>
 
         <div class="form-group">
-          <label>Hospital Photo (Optional)</label>
+          <label class="form-label">Hospital Photo (Optional)</label>
           <input type="file" class="form-control" id="hospital_image" accept="image/*" style="padding: 0.5rem;">
         </div>
 
         <div class="form-grid">
           <div class="form-group">
-            <label>Established Year *</label>
+            <label class="form-label">Established Year *</label>
             <div class="input-with-icon"><i class="fa-solid fa-calendar"></i><input type="number" class="form-control"
                 id="est_year" required placeholder="YYYY" min="1800" max="2026"></div>
           </div>
           <div class="form-group">
-            <label>Total Beds Capacity *</label>
+            <label class="form-label">Total Beds Capacity *</label>
             <div class="input-with-icon"><i class="fa-solid fa-bed"></i><input type="number" class="form-control"
                 id="total_beds" required placeholder="e.g. 50" min="1"></div>
           </div>
         </div>
 
-        <div class="section-title">Location & Address</div>
+        <div class="section-title section-location">
+          <i class="fa-solid fa-location-dot"></i> Location & Address
+        </div>
         <div class="form-group">
-          <label>Full Address *</label>
+          <label class="form-label">Full Address *</label>
           <div class="input-with-icon"><i class="fa-solid fa-map-pin"></i><input type="text" class="form-control"
               id="address" required placeholder="Street Address"></div>
         </div>
         <div class="form-grid">
-          <div class="form-group"><label>City *</label><input type="text" class="form-control" id="city" required></div>
-          <div class="form-group"><label>State *</label><input type="text" class="form-control" id="state" required>
+          <div class="form-group"><label class="form-label">City *</label><input type="text" class="form-control" id="city" style="padding-left:1rem;" required></div>
+          <div class="form-group"><label class="form-label">State *</label><input type="text" class="form-control" id="state" style="padding-left:1rem;" required>
           </div>
-          <div class="form-group" style="grid-column: 1 / -1;"><label>Pincode / Zip *</label><input type="text"
-              class="form-control" id="pincode" required></div>
+          <div class="form-group" style="grid-column: 1 / -1;"><label class="form-label">Pincode / Zip *</label><input type="text"
+              class="form-control" id="pincode" style="padding-left:1rem;" required></div>
         </div>
 
-        <div class="section-title">Contact & Admin Details</div>
+        <div class="section-title section-contact">
+          <i class="fa-solid fa-address-book"></i> Contact & Admin Details
+        </div>
         <div class="form-grid">
           <div class="form-group">
-            <label>Admin Name *</label>
-            <div class="input-with-icon"><i class="fa-solid fa-user"></i><input type="text" class="form-control"
+            <label class="form-label">Admin Name *</label>
+            <div class="input-with-icon"><i class="fa-solid fa-user-tie"></i><input type="text" class="form-control"
                 id="contact_person" required placeholder="Your full name"></div>
           </div>
           <div class="form-group">
-            <label>Designation</label>
+            <label class="form-label">Designation</label>
             <div class="input-with-icon"><i class="fa-solid fa-id-badge"></i><input type="text" class="form-control"
                 id="contact_designation" placeholder="e.g. Chief Medical Officer"></div>
           </div>
           <div class="form-group">
-            <label>Hospital Email *</label>
-            <div class="input-with-icon"><i class="fa-solid fa-envelope"></i><input type="email" class="form-control"
+            <label class="form-label">Hospital Email *</label>
+            <div class="input-with-icon"><i class="fa-solid fa-at"></i><input type="email" class="form-control"
                 id="email" required placeholder="admin@hospital.com"></div>
           </div>
           <div class="form-group">
-            <label>Hospital Phone *</label>
-            <div class="input-with-icon"><i class="fa-solid fa-phone"></i><input type="tel" class="form-control"
+            <label class="form-label">Hospital Phone *</label>
+            <div class="input-with-icon"><i class="fa-solid fa-phone-volume"></i><input type="tel" class="form-control"
                 id="phone" required placeholder="Contact Number"></div>
           </div>
         </div>
 
-        <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
-          Doctors Information
-          <button type="button" class="btn btn-sm btn-ghost" onclick="addDoctorRow()"><i class="fa-solid fa-plus"></i>
-            Add Doctor</button>
+        <div class="section-title section-doctors" style="display:flex; justify-content:space-between; align-items:center;">
+          <span><i class="fa-solid fa-user-doctor"></i> Doctors Information</span>
+          <button type="button" class="btn-ghost" style="color:#A78BFA; font-weight:600;" onclick="addDoctorRow()"><i class="fa-solid fa-plus-circle"></i> Add Doctor</button>
         </div>
         <div id="doctorsContainer">
           <!-- Dynamic doctor rows will be added here -->
@@ -156,19 +281,17 @@
     function addDoctorRow() {
       const container = document.getElementById('doctorsContainer');
       const div = document.createElement('div');
-      div.className = 'doctor-row card mb-2';
-      div.style.padding = '1rem';
-      div.style.border = '1px solid var(--border-color)';
+      div.className = 'doctor-row mb-3';
       div.innerHTML = `
-    <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
-      <h5 style="margin:0;">Doctor</h5>
-      <button type="button" class="btn btn-sm" style="background:#fee2e2;color:#ef4444;" onclick="this.parentElement.parentElement.remove()">✕ Remove</button>
+    <div style="display:flex; justify-content:space-between; margin-bottom:1.5rem;">
+      <h5 style="margin:0; color:#fff; font-size:1rem; font-weight:600;">Doctor Details</h5>
+      <button type="button" class="btn-ghost" style="color:#ef4444; font-size:0.8rem;" onclick="this.parentElement.parentElement.remove()">✕ Remove Doctor</button>
     </div>
     <div class="form-grid">
-      <div class="form-group"><label>Name *</label><input type="text" class="form-control doc-name" required placeholder="Dr. XYZ"></div>
-      <div class="form-group"><label>Type/Specialization *</label><input type="text" class="form-control doc-spec" required placeholder="e.g. Cardiologist"></div>
-      <div class="form-group"><label>Experience (Years)</label><input type="number" class="form-control doc-exp" placeholder="e.g. 10"></div>
-      <div class="form-group"><label>Consultation Fee (₹)</label><input type="number" class="form-control doc-fee" placeholder="e.g. 500"></div>
+      <div class="form-group"><label class="form-label">Full Name *</label><input type="text" class="form-control doc-name" style="padding-left:1rem;" required placeholder="Dr. John Smith"></div>
+      <div class="form-group"><label class="form-label">Specialization *</label><input type="text" class="form-control doc-spec" style="padding-left:1rem;" required placeholder="e.g. Cardiologist"></div>
+      <div class="form-group"><label class="form-label">Experience (Years)</label><input type="number" class="form-control doc-exp" style="padding-left:1rem;" placeholder="e.g. 15"></div>
+      <div class="form-group"><label class="form-label">Consultation Fee (₹)</label><input type="number" class="form-control doc-fee" style="padding-left:1rem;" placeholder="e.g. 700"></div>
     </div>
   `;
       container.appendChild(div);

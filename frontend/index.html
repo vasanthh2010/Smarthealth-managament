@@ -10,91 +10,263 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"></noscript>
 <style>
-  body { background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 50%, #0F172A 100%); min-height: 100vh; }
-  .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; position: relative; overflow: hidden; }
-  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 30% 50%, rgba(37,99,235,0.15) 0%, transparent 60%), radial-gradient(circle at 70% 50%, rgba(22,163,74,0.1) 0%, transparent 60%); pointer-events: none; }
-  .hero-logo { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; animation: fadeIn 0.6s ease; }
-  .hero-logo .logo-box { width: 72px; height: 72px; background: linear-gradient(135deg, var(--primary), #60A5FA); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white; box-shadow: 0 8px 32px rgba(37,99,235,0.4); animation: pulse 3s ease infinite; }
-  .hero-title { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; color: white; line-height: 1.15; text-align: center; animation: fadeIn 0.7s 0.1s ease both; }
-  .hero-title span { color: #60A5FA; }
-  .hero-subtitle { font-size: 1.1rem; color: rgba(255,255,255,0.65); text-align: center; max-width: 540px; margin: 1rem auto 3rem; animation: fadeIn 0.7s 0.2s ease both; }
-  .role-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; width: 100%; max-width: 860px; animation: fadeIn 0.7s 0.3s ease both; }
-  .role-card { background: rgba(255,255,255,0.07); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius-xl); padding: 2.25rem 1.75rem; text-align: center; cursor: pointer; transition: var(--transition-slow); color: white; }
-  .role-card:hover { background: rgba(255,255,255,0.13); border-color: rgba(255,255,255,0.25); transform: translateY(-6px); box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
-  .role-card.patient:hover { border-color: rgba(37,99,235,0.6); box-shadow: 0 20px 60px rgba(37,99,235,0.2); }
-  .role-card.hospital:hover { border-color: rgba(22,163,74,0.6); box-shadow: 0 20px 60px rgba(22,163,74,0.2); }
-  .role-card.admin:hover { border-color: rgba(220,38,38,0.6); box-shadow: 0 20px 60px rgba(220,38,38,0.2); }
-  .role-icon { width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; margin: 0 auto 1.25rem; }
-  .role-card.patient .role-icon { background: rgba(37,99,235,0.2); color: #60A5FA; }
-  .role-card.hospital .role-icon { background: rgba(22,163,74,0.2); color: #4ADE80; }
-  .role-card.admin .role-icon { background: rgba(220,38,38,0.2); color: #F87171; }
-  .role-card h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem; }
-  .role-card p { font-size: 0.85rem; color: rgba(255,255,255,0.55); margin-bottom: 1.5rem; }
-  .role-card .btn-role { width: 100%; padding: 0.75rem; border-radius: var(--radius); font-size: 0.9rem; font-weight: 600; border: 1.5px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); color: white; transition: var(--transition); }
-  .role-card.patient .btn-role:hover { background: var(--primary); border-color: var(--primary); }
-  .role-card.hospital .btn-role:hover { background: var(--success); border-color: var(--success); }
-  .role-card.admin .btn-role:hover { background: var(--danger); border-color: var(--danger); }
-  .features-bar { display: flex; gap: 2rem; margin-top: 3rem; animation: fadeIn 0.7s 0.5s ease both; }
-  .feat { display: flex; align-items: center; gap: 0.5rem; color: rgba(255,255,255,0.5); font-size: 0.82rem; }
-  .feat i { color: #4ADE80; }
-  .floating-orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; }
-  .orb1 { width: 400px; height: 400px; background: rgba(37,99,235,0.12); top: -100px; left: -100px; }
-  .orb2 { width: 300px; height: 300px; background: rgba(22,163,74,0.08); bottom: -50px; right: -50px; }
-  .orb3 { width: 200px; height: 200px; background: rgba(220,38,38,0.08); top: 40%; right: 10%; }
-  @media(max-width:768px) { .role-cards { grid-template-columns: 1fr; max-width: 360px; } .features-bar { flex-direction: column; gap: 0.75rem; align-items: center; } }
-  @keyframes pulse { 0%,100%{box-shadow:0 8px 32px rgba(37,99,235,0.4);} 50%{box-shadow:0 8px 48px rgba(37,99,235,0.6);} }
-  
-  /* Splash Screen */
-  #splash-screen {
-    position: fixed; inset: 0; background: #0F172A;
-    display: flex; align-items: center; justify-content: center;
-    z-index: 10000; transition: opacity 0.8s ease;
-  }
-  .splash-logo {
-    width: 200px;
-    height: auto;
-    animation: splash-blink 1s infinite alternate;
-    filter: drop-shadow(0 0 30px rgba(37,99,235,0.4));
-  }
-  @keyframes splash-blink {
-    from { opacity: 0.5; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1.05); }
+  :root {
+    --primary: #3B82F6;
+    --primary-light: #60A5FA;
+    --success: #10B981;
+    --danger: #EF4444;
+    --bg-dark: #020617;
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --radius-xl: 24px;
+    --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* CSS Shield Logo */
-  .shield-logo {
-    width: 100px; height: 120px;
-    background: linear-gradient(135deg, #2563EB 0%, #06B6D4 100%);
-    clip-path: polygon(0% 0%, 100% 0%, 100% 70%, 50% 100%, 0% 70%);
+  body { 
+    background: var(--bg-dark);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: white;
+    margin: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    min-height: 100vh;
+  }
+
+  .hero { 
+    min-height: 100vh; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    padding: 6rem 2rem; 
+    position: relative; 
+    z-index: 1;
+    box-sizing: border-box;
+  }
+
+  /* Animated Background */
+  .bg-glow {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
+    z-index: -1;
+  }
+
+  .floating-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.4;
+    animation: move-orb 20s infinite alternate linear;
+    z-index: -1;
+  }
+
+  .orb1 { width: 500px; height: 500px; background: #1e40af; top: -100px; left: -100px; }
+  .orb2 { width: 400px; height: 400px; background: #065f46; bottom: -50px; right: -50px; animation-duration: 25s; animation-delay: -5s; }
+  .orb3 { width: 300px; height: 300px; background: #7f1d1d; top: 40%; right: 10%; animation-duration: 15s; animation-delay: -2s; }
+
+  @keyframes move-orb {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(100px, 100px) scale(1.2); }
+  }
+
+  .hero-logo { 
+    margin-bottom: 2rem; 
+    animation: fadeInDown 0.8s ease; 
+  }
+
+  .hero-title { 
+    font-size: clamp(2.5rem, 6vw, 4.5rem); 
+    font-weight: 800; 
+    line-height: 1.1; 
+    text-align: center; 
+    margin-bottom: 1rem;
+    background: linear-gradient(to bottom, #fff 0%, #94a3b8 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: fadeInUp 0.8s 0.2s both;
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 3px solid rgba(255,255,255,0.75);
+    width: 0;
+    animation: 
+      typing 2.5s steps(30, end) 1.2s forwards,
+      blink-caret 0.75s step-end infinite;
+  }
+
+  .hero-title span { color: var(--primary-light); background: none; -webkit-text-fill-color: initial; }
+
+  @keyframes typing {
+    from { width: 0 }
+    to { width: 100% }
+  }
+
+  @keyframes blink-caret {
+    from, to { border-color: transparent }
+    50% { border-color: rgba(255,255,255,0.75) }
+  }
+  
+  /* Remove typing effect for smaller screens to avoid layout overflow or keep it if width is handled */
+  @media(max-width:768px) {
+    .hero-title { 
+      white-space: normal; 
+      border-right: none; 
+      width: auto; 
+      animation: fadeInUp 0.8s 0.2s both;
+    }
+  }
+
+  .hero-subtitle { 
+    font-size: 1.25rem; 
+    color: #94a3b8; 
+    text-align: center; 
+    max-width: 600px; 
+    margin-bottom: 4rem; 
+    animation: fadeInUp 0.8s 0.4s both;
+  }
+
+  .role-cards { 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 2rem; 
+    width: 100%; 
+    max-width: 1100px; 
+    animation: fadeInUp 0.8s 0.6s both;
+  }
+
+  .role-card { 
+    background: var(--card-bg); 
+    backdrop-filter: blur(20px); 
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border); 
+    border-radius: var(--radius-xl); 
+    padding: 3rem 2rem; 
+    text-align: center; 
+    cursor: pointer; 
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .role-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top right, rgba(255,255,255,0.1), transparent);
+    opacity: 0;
+    transition: var(--transition);
+  }
+
+  .role-card:hover { 
+    transform: translateY(-12px);
+    border-color: rgba(255,255,255,0.2);
+    box-shadow: 0 40px 80px -20px rgba(0,0,0,0.5);
+    background: rgba(255,255,255,0.06);
+  }
+
+  .role-card:hover::after { opacity: 1; }
+
+  .role-card.patient:hover { border-color: var(--primary); }
+  .role-card.hospital:hover { border-color: var(--success); }
+  .role-card.admin:hover { border-color: var(--danger); }
+
+  .role-icon { 
+    width: 72px; 
+    height: 72px; 
+    border-radius: 20px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 2rem; 
+    margin: 0 auto 2rem; 
+    transition: var(--transition);
+  }
+
+  .role-card.patient .role-icon { background: rgba(59,130,246,0.1); color: var(--primary-light); }
+  .role-card.hospital .role-icon { background: rgba(16,185,129,0.1); color: #34d399; }
+  .role-card.admin .role-icon { background: rgba(239,68,68,0.1); color: #f87171; }
+
+  .role-card:hover .role-icon { transform: scale(1.1) rotate(5deg); }
+
+  .role-card h3 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; color: white; }
+  .role-card p { font-size: 0.95rem; color: #94a3b8; line-height: 1.6; margin-bottom: 2rem; }
+
+  .btn-role { 
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem; 
+    border-radius: 12px; 
+    font-size: 0.9rem; 
+    font-weight: 600; 
+    border: 1px solid rgba(255,255,255,0.1); 
+    background: rgba(255,255,255,0.05); 
+    color: white; 
+    transition: var(--transition);
+    width: 100%;
+    justify-content: center;
+  }
+
+  .role-card.patient:hover .btn-role { background: var(--primary); border-color: var(--primary); }
+  .role-card.hospital:hover .btn-role { background: var(--success); border-color: var(--success); }
+  .role-card.admin:hover .btn-role { background: var(--danger); border-color: var(--danger); }
+
+  .features-bar { 
+    display: flex; 
+    gap: 3rem; 
+    margin-top: 5rem; 
+    animation: fadeInUp 0.8s 0.8s both; 
+  }
+  .feat { display: flex; align-items: center; gap: 0.75rem; color: #64748b; font-size: 0.9rem; font-weight: 500; }
+  .feat i { color: var(--success); font-size: 1.1rem; }
+
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+
+  @media(max-width:1024px) { .role-cards { grid-template-columns: repeat(2, 1fr); max-width: 800px; } }
+  @media(max-width:768px) { 
+    .role-cards { grid-template-columns: 1fr; max-width: 400px; } 
+    .features-bar { flex-direction: column; gap: 1rem; align-items: center; }
+    .hero-title { font-size: 2.25rem; }
+  }
+
+  /* Splash Screen Improvements */
+  #splash-screen {
+    position: fixed; inset: 0; background: var(--bg-dark);
     display: flex; align-items: center; justify-content: center;
-    position: relative; box-shadow: 0 0 40px rgba(37,99,235,0.4);
-    border: 3px solid rgba(255,255,255,0.2);
+    z-index: 10000; transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .shield-logo::before {
-    content: ''; position: absolute; width: 40px; height: 10px; background: white; border-radius: 5px;
+  .splash-logo {
+    width: 180px;
+    height: auto;
+    animation: splash-pulse 2s infinite ease-in-out;
+    filter: drop-shadow(0 0 40px rgba(59, 130, 246, 0.3));
   }
-  .shield-logo::after {
-    content: ''; position: absolute; height: 40px; width: 10px; background: white; border-radius: 5px;
+  @keyframes splash-pulse {
+    0%, 100% { transform: scale(0.95); opacity: 0.6; }
+    50% { transform: scale(1.05); opacity: 1; }
   }
-  .shield-logo.small { width: 44px; height: 52px; }
-  .shield-logo.small::before { width: 18px; height: 4px; }
-  .shield-logo.small::after { height: 18px; width: 4px; }
 </style>
 </head>
 <body>
+<div class="bg-glow"></div>
+<div class="floating-orb orb1"></div>
+<div class="floating-orb orb2"></div>
+<div class="floating-orb orb3"></div>
+
 <div id="splash-screen">
   <img src="images/logo.png" alt="Smart Hospital Logo" class="splash-logo">
 </div>
+
 <div class="hero">
-  <div class="floating-orb orb1"></div>
-  <div class="floating-orb orb2"></div>
-  <div class="floating-orb orb3"></div>
 
   <div class="hero-logo">
-    <img src="images/logo.png" alt="Logo" style="width: 80px; height: auto; filter: drop-shadow(0 0 15px rgba(37,99,235,0.3));">
+    <img src="images/logo.png" alt="Logo" style="width: 100px; height: auto; filter: drop-shadow(0 0 20px rgba(59,130,246,0.3));">
   </div>
 
-  <h1 class="hero-title">Smart <span>Hospital</span><br>Management System</h1>
+  <h1 class="hero-title">Smart Hospital System</h1>
   <p class="hero-subtitle">Real-time token queuing, bed management & emergency routing. Choose your portal to get started.</p>
 
   <div class="role-cards">
@@ -136,9 +308,9 @@ window.addEventListener('load', () => {
     const ss = document.getElementById('splash-screen');
     if (ss) {
       ss.style.opacity = '0';
-      setTimeout(() => ss.remove(), 800);
+      setTimeout(() => ss.remove(), 1200);
     }
-  }, 3000); // 3 seconds blinking
+  }, 3000);
 });
 
 function navigate(role) {
