@@ -3,7 +3,7 @@
    Base URL auto-detects: localhost:5000
 ────────────────────────────────────────────────────────────── */
 
-const API_BASE = window.location.origin;
+const API_BASE = 'https://smarthealth-managament.onrender.com';
 
 /* ─── TOKEN MANAGEMENT ───────────────────────────────────────── */
 const Auth = {
@@ -43,9 +43,8 @@ async function apiFetch(path, options = {}) {
     }
     return data;
   } catch (err) {
-    if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-      throw new Error('Cannot connect to server. Make sure the backend is running on port 5000.');
-    }
+      throw new Error('Cannot connect to server. The backend might be offline or starting up.');
+
     throw err;
   }
 }
