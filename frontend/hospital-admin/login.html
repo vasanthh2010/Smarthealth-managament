@@ -186,7 +186,17 @@ function togglePwd() {
 }
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
   e.preventDefault();
+  
+  const loginId = document.getElementById('login_id').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!loginId || !password) {
+    showToast('Please enter both Login ID and password', 'warning');
+    return;
+  }
+
   clearError('msg-area');
+
   const btn = document.getElementById('loginBtn');
   setLoading(btn, true, 'Signing in...');
   try {

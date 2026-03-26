@@ -162,10 +162,22 @@ document.getElementById('date_of_birth').addEventListener('change', function() {
 
 document.getElementById('signupForm').addEventListener('submit', async function(e) {
   e.preventDefault();
+  
+  const fullName = document.getElementById('full_name').value.trim();
+  const dob = document.getElementById('date_of_birth').value;
+  const email = document.getElementById('email').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const address = document.getElementById('address').value.trim();
+  const blood = document.getElementById('blood_group').value;
+
+  if (!fullName || !dob || !email || !phone || !address) {
+    showToast('Please fill in all required (*) fields', 'warning');
+    return;
+  }
+  if (!blood) { showToast('Please select your blood group', 'warning'); return; }
+
   clearError('msg-area');
 
-  const blood = document.getElementById('blood_group').value;
-  if (!blood) { showError('msg-area', 'Please select your blood group'); return; }
 
   const pwd = document.getElementById('password').value;
   const cpwd = document.getElementById('confirm_password').value;

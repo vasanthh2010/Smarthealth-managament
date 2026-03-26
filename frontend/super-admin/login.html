@@ -178,7 +178,17 @@ function togglePwd() {
 }
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
   e.preventDefault();
+  
+  const user = document.getElementById('username').value.trim();
+  const pass = document.getElementById('password').value;
+
+  if (!user || !pass) {
+    showToast('Admin credentials required', 'warning');
+    return;
+  }
+
   clearError('msg-area');
+
   const btn = document.getElementById('loginBtn');
   setLoading(btn, true, 'Authenticating...');
   try {

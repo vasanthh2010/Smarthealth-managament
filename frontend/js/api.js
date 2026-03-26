@@ -38,15 +38,31 @@ async function apiFetch(path, options = {}) {
   try {
     const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
     const data = await res.json().catch(() => ({}));
+    
     if (!res.ok) {
-      throw new Error(data.error || data.message || `HTTP ${res.status}`);
+      const serverMsg = data.error || data.message;
+      let errorMsg = serverMsg || `Error ${res.status}`;
+
+      // User-friendly mapping for common "mistakes" or status codes
+      switch (res.status) {
+        case 400: errorMsg = serverMsg || 'Invalid request. Please check your input.'; break;
+        case 401: errorMsg = serverMsg || 'Incorrect details or session expired. Please sign in again.'; break;
+        case 403: errorMsg = 'Access denied. You don\'t have permission for this.'; break;
+        case 404: errorMsg = 'Oops! We couldn\'t find what you were looking for.'; break;
+        case 409: errorMsg = serverMsg || 'This already exists (Conflict).'; break;
+        case 429: errorMsg = 'Too many requests. Please slow down a bit.'; break;
+        case 500: errorMsg = 'Server is having a moment. Please try again in a few seconds.'; break;
+      }
+      throw new Error(errorMsg);
     }
     return data;
   } catch (err) {
-      throw new Error('Cannot connect to server. The backend might be offline or starting up.');
-
+    if (err.name === 'TypeError' || err.message.includes('fetch')) {
+      throw new Error('Connection lost. The backend is likely starting up or your internet is unstable.');
+    }
     throw err;
   }
+
 }
 
 /* ─── TOAST NOTIFICATIONS ────────────────────────────────────── */
@@ -57,15 +73,30 @@ function showToast(message, type = 'default', duration = 3500) {
     container.id = 'toast-container';
     document.body.appendChild(container);
   }
+  
+  const iconMap = {
+    success: 'fa-circle-check',
+    error: 'fa-circle-xmark',
+    warning: 'fa-triangle-exclamation',
+    info: 'fa-circle-info',
+    default: 'fa-bell'
+  };
+
   const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  toast.textContent = message;
+  toast.className = `toast ${type} fade-in`;
+  toast.innerHTML = `
+    <i class="fa-solid ${iconMap[type] || iconMap.default}"></i>
+    <span>${message}</span>
+  `;
+  
   container.appendChild(toast);
+  
   setTimeout(() => {
-    toast.style.animation = 'fadeIn 0.3s ease reverse both';
+    toast.style.animation = 'fadeOut 0.3s ease forwards';
     setTimeout(() => toast.remove(), 300);
   }, duration);
 }
+
 
 /* ─── LOADING HELPER ─────────────────────────────────────────── */
 function setLoading(btn, loading, text = 'Processing...') {

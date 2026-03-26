@@ -326,6 +326,7 @@ tr:hover td { background: var(--bg); }
   100% { background-position: -200% 0; }
 }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-16px); } }
 @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes checkmark { 0% { stroke-dashoffset: 100; } 100% { stroke-dashoffset: 0; } }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -366,11 +367,14 @@ tr:hover td { background: var(--bg); }
 /* ─── TOAST ──────────────────────────────────────────────────── */
 #toast-container { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
 .toast {
-  background: var(--text); color: white; padding: 0.875rem 1.5rem; border-radius: var(--radius);
-  font-size: 0.88rem; font-weight: 500; box-shadow: var(--shadow-lg);
-  animation: slideUp 0.3s ease both;
-  pointer-events: all; min-width: 260px; text-align: center;
+  background: var(--text); color: white; padding: 1rem 1.75rem; border-radius: var(--radius-lg);
+  font-size: 0.95rem; font-weight: 500; box-shadow: var(--shadow-lg);
+  display: flex; align-items: center; gap: 0.75rem;
+  pointer-events: all; min-width: 320px; text-align: left;
+  border: 1px solid rgba(255,255,255,0.1);
 }
+.toast i { font-size: 1.15rem; }
+
 .toast.success { background: var(--success); }
 .toast.error { background: var(--danger); }
 .toast.warning { background: var(--warning); }
