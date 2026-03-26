@@ -2,8 +2,8 @@
 -- MySQL Database Schema
 -- Run this file to initialize the database
 
-CREATE DATABASE IF NOT EXISTS smart_hospital;
-USE smart_hospital;
+-- CREATE DATABASE IF NOT EXISTS smart_hospital;
+-- USE smart_hospital;
 
 -- ============================================================
 -- USERS (Patients)

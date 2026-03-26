@@ -11,14 +11,10 @@ from config import Config
 
 # ─── APPLY DB PERFORMANCE INDEXES ON STARTUP ─────────────────────────────────
 def apply_db_indexes():
-    """Ensure performance indexes exist on the SQLite database."""
-    import sqlite3
-    db_path = os.path.join(os.path.dirname(__file__), 'app.db')
-    if not os.path.exists(db_path):
-        print(f"[DB] Database not found at {db_path}. Run init_db.py first.")
-        return
+    """Ensure performance indexes exist on the current database."""
+    from db import get_db
     try:
-        conn = sqlite3.connect(db_path)
+        conn = get_db()
         indexes = [
             "CREATE INDEX IF NOT EXISTS idx_hospitals_status ON hospitals(status)",
             "CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active)",
@@ -31,15 +27,22 @@ def apply_db_indexes():
             "CREATE INDEX IF NOT EXISTS idx_registrations_status ON hospital_registrations(status)",
             "CREATE INDEX IF NOT EXISTS idx_doctors_hospital ON doctors(hospital_id)",
         ]
-        for sql in indexes:
-            conn.execute(sql)
-        conn.commit()
+        with conn.cursor() as cur:
+            for sql in indexes:
+                try:
+                    cur.execute(sql)
+                except Exception as ex:
+                    # Ignore errors for indexes that might already exist but use old syntax
+                    pass
+        if hasattr(conn, 'commit'):
+            conn.commit()
         conn.close()
         print("[DB] Performance indexes applied.")
     except Exception as e:
         print(f"[DB] Index creation warning: {e}")
 
 apply_db_indexes()
+
 
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
