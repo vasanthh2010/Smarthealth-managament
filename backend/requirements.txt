@@ -7,4 +7,4 @@ PyJWT==2.8.0
 python-dotenv==1.0.0
 gevent>=25.4.1
 gevent-websocket>=0.10.1
-
+cryptography>=46.0.0

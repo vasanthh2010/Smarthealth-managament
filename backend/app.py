@@ -48,8 +48,10 @@ apply_db_indexes()
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
 app.secret_key = Config.SECRET_KEY
 
-CORS(app, resources={r"/api/*": {"origins": "*", "allow_headers": ["Content-Type", "Authorization"]}})
+# ─── CONFIGURE CORS ─────────────────────────────────────────────────────────────
+CORS(app, supports_credentials=True)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='gevent')
+
 
 # ─── REGISTER BLUEPRINTS ──────────────────────────────────────────────────────────
 from routes.auth import auth_bp
